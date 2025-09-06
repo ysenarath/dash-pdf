@@ -33,6 +33,7 @@ const _DashPdf = (props) => {
 
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentAnnotation, setCurrentAnnotation] = useState(null);
+    const [isTextSelecting, setIsTextSelecting] = useState(false);
 
     const containerRef = useRef(null);
     const pageRef = useRef(null);
@@ -124,19 +125,34 @@ const _DashPdf = (props) => {
     // Listen for text selection changes
     useEffect(() => {
         const handleSelectionChange = () => {
-            // Small delay to ensure selection is complete
+            const selection = window.getSelection();
+            if (selection && selection.toString().length > 0) {
+                setIsTextSelecting(true);
+            } else {
+                setIsTextSelecting(false);
+            }
+        };
+
+        const handleMouseUp = () => {
+            // Small delay to ensure selection is complete before processing
             setTimeout(() => {
-                handleTextSelection();
-            }, 100);
+                if (selectedAnnotationTool === 'highlight') {
+                    handleTextSelection();
+                }
+                setIsTextSelecting(false);
+            }, 50);
         };
 
         if (enableAnnotations && selectedAnnotationTool === 'highlight') {
             document.addEventListener('selectionchange', handleSelectionChange);
+            document.addEventListener('mouseup', handleMouseUp);
+
             return () => {
                 document.removeEventListener(
                     'selectionchange',
                     handleSelectionChange
                 );
+                document.removeEventListener('mouseup', handleMouseUp);
             };
         }
     }, [enableAnnotations, selectedAnnotationTool, handleTextSelection]);
@@ -146,10 +162,22 @@ const _DashPdf = (props) => {
             if (!enableAnnotations) {
                 return;
             }
+
+            // Don't interfere with text selection for highlighting
             if (selectedAnnotationTool === 'highlight') {
                 return;
             }
+
             if (selectedAnnotationTool === 'comment') {
+                return;
+            }
+
+            // Check if user is clicking on an existing annotation
+            if (
+                e.target.closest(
+                    '.annotation-comment, .annotation-rectangle, .annotation-text'
+                )
+            ) {
                 return;
             }
 
@@ -180,7 +208,9 @@ const _DashPdf = (props) => {
             if (!isDrawing || !currentAnnotation) {
                 return;
             }
-            if (selectedAnnotationTool === 'highlight') {
+
+            // Don't interfere with text selection
+            if (selectedAnnotationTool === 'highlight' || isTextSelecting) {
                 return;
             }
 
@@ -194,11 +224,12 @@ const _DashPdf = (props) => {
                 height: y - prev.y,
             }));
         },
-        [isDrawing, currentAnnotation, selectedAnnotationTool]
+        [isDrawing, currentAnnotation, selectedAnnotationTool, isTextSelecting]
     );
 
     const handleMouseUp = useCallback(() => {
-        if (selectedAnnotationTool === 'highlight') {
+        // Don't interfere with text selection for highlighting
+        if (selectedAnnotationTool === 'highlight' || isTextSelecting) {
             return;
         }
 
@@ -222,7 +253,6 @@ const _DashPdf = (props) => {
                     onAnnotationAdd(currentAnnotation);
                 }
             }
-            // If not dragged enough, don't create the annotation
 
             setCurrentAnnotation(null);
         }
@@ -234,6 +264,7 @@ const _DashPdf = (props) => {
         updateAnnotations,
         onAnnotationAdd,
         selectedAnnotationTool,
+        isTextSelecting,
     ]);
 
     const addCommentAnnotation = useCallback(
@@ -242,11 +273,19 @@ const _DashPdf = (props) => {
                 return;
             }
 
+            // Don't add comment if clicking on existing annotations
+            if (
+                e.target.closest(
+                    '.annotation-comment, .annotation-rectangle, .annotation-text, .annotation-highlight'
+                )
+            ) {
+                return;
+            }
+
             const rect = containerRef.current.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            // For Dash integration, we'll create the comment and let the parent handle the prompt
             const newAnnotation = {
                 id: `comment_${Date.now()}`,
                 type: 'comment',
@@ -336,21 +375,49 @@ const _DashPdf = (props) => {
         (ann) => ann.page === pageNumber
     );
 
+    // Determine mouse event handlers based on selected tool
+    const getMouseHandlers = () => {
+        if (selectedAnnotationTool === 'highlight') {
+            // For highlight mode, don't attach mouse handlers that interfere with text selection
+            return {
+                onClick: undefined,
+                onMouseDown: undefined,
+                onMouseMove: undefined,
+                onMouseUp: undefined,
+            };
+        } else if (selectedAnnotationTool === 'comment') {
+            return {
+                onClick: addCommentAnnotation,
+                onMouseDown: undefined,
+                onMouseMove: undefined,
+                onMouseUp: undefined,
+            };
+        } else {
+            // For rectangle and text tools
+            return {
+                onClick: undefined,
+                onMouseDown: handleMouseDown,
+                onMouseMove: handleMouseMove,
+                onMouseUp: handleMouseUp,
+            };
+        }
+    };
+
+    const mouseHandlers = getMouseHandlers();
+
     const pdfContent = (
         <div
             ref={containerRef}
             className={`pdf-container ${
                 selectedAnnotationTool === 'highlight' ? 'highlight-mode' : ''
             }`}
-            style={{position: 'relative', display: 'inline-block'}}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onClick={
-                selectedAnnotationTool === 'comment'
-                    ? addCommentAnnotation
-                    : undefined
-            }
+            style={{
+                position: 'relative',
+                display: 'inline-block',
+                userSelect:
+                    selectedAnnotationTool === 'highlight' ? 'text' : 'none',
+            }}
+            {...mouseHandlers}
         >
             <Document file={data} onLoadSuccess={onDocumentLoadSuccess}>
                 <Page
@@ -429,7 +496,6 @@ const _DashPdf = (props) => {
                                     height: Math.abs(annotation.height),
                                     border: '2px solid #dc2626',
                                     backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                    // pointerEvents: 'none',
                                     zIndex: 5,
                                 }}
                             >
@@ -551,6 +617,7 @@ const _DashPdf = (props) => {
                                         borderRadius: '50%',
                                         fontSize: '10px',
                                         cursor: 'pointer',
+                                        pointerEvents: 'auto',
                                     }}
                                 >
                                     ×
@@ -582,7 +649,6 @@ const _DashPdf = (props) => {
                             backgroundColor: 'rgba(156, 163, 175, 0.1)',
                             pointerEvents: 'none',
                             zIndex: 5,
-                            // Add visual indication if drag distance is insufficient
                             opacity: (() => {
                                 const dragDistance = Math.sqrt(
                                     Math.pow(currentAnnotation.width, 2) +
