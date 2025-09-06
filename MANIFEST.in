@@ -1,0 +1,11 @@
+include dash_pdf_highlighter/dash_pdf.min.js
+include dash_pdf_highlighter/dash_pdf.min.js.map
+include dash_pdf_highlighter/async-*.js
+include dash_pdf_highlighter/async-*.js.map
+include dash_pdf_highlighter/*-shared.js
+include dash_pdf_highlighter/*-shared.js.map
+include dash_pdf_highlighter/metadata.json
+include dash_pdf_highlighter/package-info.json
+include README.md
+include LICENSE
+include package.json
