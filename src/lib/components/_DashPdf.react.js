@@ -1,9 +1,14 @@
-import React, {useState, useRef, useCallback} from 'react';
-import PropTypes from 'prop-types';
+import React, {useState, useRef, useCallback, useEffect} from 'react';
+import PropTypes, {func} from 'prop-types';
 import {Document, Page} from 'react-pdf';
 import {pdfjs} from 'react-pdf';
 
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+import './_DashPdf.react.css';
+
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+const DEFAULT_OPACITY = 0.3;
 
 /**
  * _DashPdf is a component that renders a PDF with annotation capabilities.
@@ -15,71 +20,137 @@ const _DashPdf = (props) => {
         id,
         data,
         setProps,
-        buttonClassName,
-        labelClassName,
-        controlsClassName,
         enableAnnotations,
         annotations,
         selectedAnnotationTool,
-        annotationToolbarClassName,
-        annotationButtonClassName,
-        showAnnotationSidebar,
-        sidebarClassName,
         scale,
         onAnnotationAdd,
         onAnnotationDelete,
         onAnnotationUpdate,
+        pageNumber,
     } = props;
 
-    const [numPages, setNumPages] = useState(null);
-    const [pageNumber, setPageNumber] = useState(1);
-    const [internalAnnotations, setInternalAnnotations] = useState(
-        annotations || []
-    );
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentAnnotation, setCurrentAnnotation] = useState(null);
+
     const containerRef = useRef(null);
+    const pageRef = useRef(null);
 
-    // Use controlled annotations if provided, otherwise use internal state
-    const currentAnnotations = annotations || internalAnnotations;
-    const updateAnnotations = setProps
-        ? (newAnnotations) => setProps({annotations: newAnnotations})
-        : setInternalAnnotations;
+    const currentAnnotations = annotations;
 
-    function onDocumentLoadSuccess({numPages}) {
-        setNumPages(numPages);
-        setPageNumber(1);
-
-        // Notify parent component if callback provided
+    function updateAnnotations(newAnnotations) {
         if (setProps) {
-            setProps({numPages});
+            setProps({annotations: newAnnotations});
         }
     }
 
-    function changePage(offset) {
-        const newPageNumber = Math.max(
-            1,
-            Math.min(numPages, pageNumber + offset)
-        );
-        setPageNumber(newPageNumber);
-
+    function setPageNumber(newPageNumber) {
         if (setProps) {
             setProps({pageNumber: newPageNumber});
         }
     }
 
-    function previousPage() {
-        changePage(-1);
+    function onDocumentLoadSuccess({numPages}) {
+        if (setProps) {
+            setProps({numPages});
+        }
+        setPageNumber(1);
     }
 
-    function nextPage() {
-        changePage(1);
-    }
+    // Handle text selection for highlighting
+    const handleTextSelection = useCallback(() => {
+        if (!enableAnnotations || selectedAnnotationTool !== 'highlight') {
+            return;
+        }
+
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+            return;
+        }
+
+        const range = selection.getRangeAt(0);
+        const selectedText = selection.toString().trim();
+
+        if (!selectedText) {
+            return;
+        }
+
+        // Get the container bounds for relative positioning
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const rangeRect = range.getBoundingClientRect();
+
+        // Calculate relative position within the PDF container
+        const x = rangeRect.left - containerRect.left;
+        const y = rangeRect.top - containerRect.top;
+        const width = rangeRect.width;
+        const height = rangeRect.height;
+
+        // Only create highlight if there's a meaningful selection
+        if (width > 5 && height > 5 && selectedText.length > 0) {
+            const highlightAnnotation = {
+                id: `highlight_${Date.now()}`,
+                type: 'highlight',
+                x,
+                y,
+                width,
+                height,
+                page: pageNumber,
+                text: selectedText,
+                color: '#ffff00',
+                opacity: 0.3,
+                timestamp: new Date().toISOString(),
+            };
+
+            const newAnnotations = [...currentAnnotations, highlightAnnotation];
+            updateAnnotations(newAnnotations);
+
+            if (onAnnotationAdd) {
+                onAnnotationAdd(highlightAnnotation);
+            }
+
+            // Clear the selection after creating the annotation
+            selection.removeAllRanges();
+        }
+    }, [
+        enableAnnotations,
+        selectedAnnotationTool,
+        pageNumber,
+        currentAnnotations,
+        updateAnnotations,
+        onAnnotationAdd,
+    ]);
+
+    // Listen for text selection changes
+    useEffect(() => {
+        const handleSelectionChange = () => {
+            // Small delay to ensure selection is complete
+            setTimeout(() => {
+                handleTextSelection();
+            }, 100);
+        };
+
+        if (enableAnnotations && selectedAnnotationTool === 'highlight') {
+            document.addEventListener('selectionchange', handleSelectionChange);
+            return () => {
+                document.removeEventListener(
+                    'selectionchange',
+                    handleSelectionChange
+                );
+            };
+        }
+    }, [enableAnnotations, selectedAnnotationTool, handleTextSelection]);
 
     const handleMouseDown = useCallback(
         (e) => {
-            if (!enableAnnotations || selectedAnnotationTool === 'comment')
+            if (!enableAnnotations) {
                 return;
+            }
+            if (selectedAnnotationTool === 'highlight') {
+                return;
+            }
+            if (selectedAnnotationTool === 'comment') {
+                return;
+            }
 
             const rect = containerRef.current.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -105,7 +176,12 @@ const _DashPdf = (props) => {
 
     const handleMouseMove = useCallback(
         (e) => {
-            if (!isDrawing || !currentAnnotation) return;
+            if (!isDrawing || !currentAnnotation) {
+                return;
+            }
+            if (selectedAnnotationTool === 'highlight') {
+                return;
+            }
 
             const rect = containerRef.current.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -117,10 +193,14 @@ const _DashPdf = (props) => {
                 height: y - prev.y,
             }));
         },
-        [isDrawing, currentAnnotation]
+        [isDrawing, currentAnnotation, selectedAnnotationTool]
     );
 
     const handleMouseUp = useCallback(() => {
+        if (selectedAnnotationTool === 'highlight') {
+            return;
+        }
+
         if (isDrawing && currentAnnotation) {
             const newAnnotations = [...currentAnnotations, currentAnnotation];
             updateAnnotations(newAnnotations);
@@ -139,12 +219,14 @@ const _DashPdf = (props) => {
         currentAnnotations,
         updateAnnotations,
         onAnnotationAdd,
+        selectedAnnotationTool,
     ]);
 
     const addCommentAnnotation = useCallback(
         (e) => {
-            if (!enableAnnotations || selectedAnnotationTool !== 'comment')
+            if (!enableAnnotations || selectedAnnotationTool !== 'comment') {
                 return;
+            }
 
             const rect = containerRef.current.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -159,7 +241,7 @@ const _DashPdf = (props) => {
                 width: 20,
                 height: 20,
                 page: pageNumber,
-                comment: 'New comment', // Default comment - can be updated via props
+                comment: 'New comment',
                 timestamp: new Date().toISOString(),
             };
 
@@ -222,119 +304,30 @@ const _DashPdf = (props) => {
         [currentAnnotations, updateAnnotations, onAnnotationUpdate]
     );
 
-    const selectAnnotationTool = useCallback(
-        (tool) => {
-            if (setProps) {
-                setProps({selectedAnnotationTool: tool});
+    const updateAnnotationColor = useCallback(
+        (annotationId, newColor) => {
+            const newAnnotations = currentAnnotations.map((ann) =>
+                ann.id === annotationId ? {...ann, color: newColor} : ann
+            );
+            updateAnnotations(newAnnotations);
+
+            if (onAnnotationUpdate) {
+                onAnnotationUpdate(annotationId, {color: newColor});
             }
         },
-        [setProps]
+        [currentAnnotations, updateAnnotations, onAnnotationUpdate]
     );
 
     const currentPageAnnotations = currentAnnotations.filter(
         (ann) => ann.page === pageNumber
     );
 
-    const annotationToolbar = enableAnnotations && (
-        <div className={annotationToolbarClassName || 'annotation-toolbar'}>
-            <button
-                onClick={() => selectAnnotationTool('comment')}
-                className={`${annotationButtonClassName || 'annotation-btn'} ${
-                    selectedAnnotationTool === 'comment' ? 'active' : ''
-                }`}
-            >
-                💬 Comment
-            </button>
-            <button
-                onClick={() => selectAnnotationTool('rectangle')}
-                className={`${annotationButtonClassName || 'annotation-btn'} ${
-                    selectedAnnotationTool === 'rectangle' ? 'active' : ''
-                }`}
-            >
-                ⬜ Rectangle
-            </button>
-            <button
-                onClick={() => selectAnnotationTool('text')}
-                className={`${annotationButtonClassName || 'annotation-btn'} ${
-                    selectedAnnotationTool === 'text' ? 'active' : ''
-                }`}
-            >
-                📝 Text
-            </button>
-        </div>
-    );
-
-    const annotationSidebar = enableAnnotations && showAnnotationSidebar && (
-        <div className={sidebarClassName || 'annotation-sidebar'}>
-            <h3>Annotations ({currentPageAnnotations.length})</h3>
-            <div className="annotations-list">
-                {currentPageAnnotations.map((annotation, index) => (
-                    <div key={annotation.id} className="annotation-item">
-                        <div className="annotation-header">
-                            <span className="annotation-type">
-                                {annotation.type === 'comment' && '💬'}
-                                {annotation.type === 'rectangle' && '⬜'}
-                                {annotation.type === 'text' && '📝'}
-                                {annotation.type} #{index + 1}
-                            </span>
-                            <button
-                                onClick={() => deleteAnnotation(annotation.id)}
-                                className="delete-btn"
-                            >
-                                🗑️
-                            </button>
-                        </div>
-                        {annotation.comment && (
-                            <div className="annotation-content">
-                                <strong>Comment:</strong>
-                                <input
-                                    type="text"
-                                    value={annotation.comment}
-                                    onChange={(e) =>
-                                        updateAnnotationComment(
-                                            annotation.id,
-                                            e.target.value
-                                        )
-                                    }
-                                    className="comment-input"
-                                />
-                            </div>
-                        )}
-                        {annotation.text && (
-                            <div className="annotation-content">
-                                <strong>Text:</strong>
-                                <input
-                                    type="text"
-                                    value={annotation.text}
-                                    onChange={(e) =>
-                                        updateAnnotationText(
-                                            annotation.id,
-                                            e.target.value
-                                        )
-                                    }
-                                    className="text-input"
-                                />
-                            </div>
-                        )}
-                        <div className="annotation-meta">
-                            Position: ({Math.round(annotation.x)},{' '}
-                            {Math.round(annotation.y)})
-                        </div>
-                    </div>
-                ))}
-                {currentPageAnnotations.length === 0 && (
-                    <p className="no-annotations">
-                        No annotations on this page.
-                    </p>
-                )}
-            </div>
-        </div>
-    );
-
     const pdfContent = (
         <div
             ref={containerRef}
-            className="pdf-container"
+            className={`pdf-container ${
+                selectedAnnotationTool === 'highlight' ? 'highlight-mode' : ''
+            }`}
             style={{position: 'relative', display: 'inline-block'}}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -347,9 +340,10 @@ const _DashPdf = (props) => {
         >
             <Document file={data} onLoadSuccess={onDocumentLoadSuccess}>
                 <Page
+                    ref={pageRef}
                     pageNumber={pageNumber}
                     scale={scale}
-                    renderTextLayer={false}
+                    renderTextLayer={true}
                     renderAnnotationLayer={false}
                 />
             </Document>
@@ -375,6 +369,7 @@ const _DashPdf = (props) => {
                                     justifyContent: 'center',
                                     cursor: 'pointer',
                                     fontSize: '12px',
+                                    zIndex: 10,
                                 }}
                                 title={annotation.comment}
                             >
@@ -420,13 +415,15 @@ const _DashPdf = (props) => {
                                     height: Math.abs(annotation.height),
                                     border: '2px solid #dc2626',
                                     backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                    pointerEvents: 'none',
+                                    // pointerEvents: 'none',
+                                    zIndex: 5,
                                 }}
                             >
                                 <button
-                                    onClick={() =>
-                                        deleteAnnotation(annotation.id)
-                                    }
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteAnnotation(annotation.id);
+                                    }}
                                     style={{
                                         position: 'absolute',
                                         top: '-8px',
@@ -439,10 +436,9 @@ const _DashPdf = (props) => {
                                         borderRadius: '50%',
                                         fontSize: '10px',
                                         cursor: 'pointer',
-                                        pointerEvents: 'auto',
                                     }}
                                 >
-                                    🗑️
+                                    ×
                                 </button>
                             </div>
                         )}
@@ -454,6 +450,7 @@ const _DashPdf = (props) => {
                                     position: 'absolute',
                                     left: annotation.x,
                                     top: annotation.y,
+                                    zIndex: 10,
                                 }}
                             >
                                 <input
@@ -475,10 +472,12 @@ const _DashPdf = (props) => {
                                         minWidth: '80px',
                                     }}
                                 />
+
                                 <button
-                                    onClick={() =>
-                                        deleteAnnotation(annotation.id)
-                                    }
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteAnnotation(annotation.id);
+                                    }}
                                     style={{
                                         position: 'absolute',
                                         top: '-8px',
@@ -493,7 +492,54 @@ const _DashPdf = (props) => {
                                         cursor: 'pointer',
                                     }}
                                 >
-                                    🗑️
+                                    ×
+                                </button>
+                            </div>
+                        )}
+
+                        {annotation.type === 'highlight' && (
+                            <div
+                                className="annotation-highlight"
+                                style={{
+                                    position: 'absolute',
+                                    left: annotation.x,
+                                    top: annotation.y,
+                                    width: annotation.width,
+                                    height: annotation.height,
+                                    backgroundColor:
+                                        annotation.color || '#ffff00',
+                                    opacity:
+                                        annotation.opacity || DEFAULT_OPACITY,
+                                    pointerEvents: 'none',
+                                    borderRadius: '2px',
+                                    zIndex: 1,
+                                }}
+                                title={
+                                    annotation.text
+                                        ? `"${annotation.text}"`
+                                        : 'Highlighted text'
+                                }
+                            >
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteAnnotation(annotation.id);
+                                    }}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '-8px',
+                                        right: '-8px',
+                                        width: '16px',
+                                        height: '16px',
+                                        backgroundColor: '#dc2626',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '50%',
+                                        fontSize: '10px',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    ×
                                 </button>
                             </div>
                         )}
@@ -501,155 +547,48 @@ const _DashPdf = (props) => {
                 ))}
 
             {/* Current drawing annotation */}
-            {enableAnnotations && currentAnnotation && (
-                <div
-                    className="annotation-drawing"
-                    style={{
-                        position: 'absolute',
-                        left: Math.min(
-                            currentAnnotation.x,
-                            currentAnnotation.x + currentAnnotation.width
-                        ),
-                        top: Math.min(
-                            currentAnnotation.y,
-                            currentAnnotation.y + currentAnnotation.height
-                        ),
-                        width: Math.abs(currentAnnotation.width),
-                        height: Math.abs(currentAnnotation.height),
-                        border: '2px dashed #6b7280',
-                        backgroundColor: 'rgba(156, 163, 175, 0.1)',
-                        pointerEvents: 'none',
-                    }}
-                />
-            )}
+            {enableAnnotations &&
+                currentAnnotation &&
+                selectedAnnotationTool !== 'highlight' && (
+                    <div
+                        className="annotation-drawing"
+                        style={{
+                            position: 'absolute',
+                            left: Math.min(
+                                currentAnnotation.x,
+                                currentAnnotation.x + currentAnnotation.width
+                            ),
+                            top: Math.min(
+                                currentAnnotation.y,
+                                currentAnnotation.y + currentAnnotation.height
+                            ),
+                            width: Math.abs(currentAnnotation.width),
+                            height: Math.abs(currentAnnotation.height),
+                            border: '2px dashed #6b7280',
+                            backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                            pointerEvents: 'none',
+                            zIndex: 5,
+                        }}
+                    />
+                )}
         </div>
     );
 
     return (
         <div id={id} className="dash-pdf-container">
-            {annotationToolbar}
-
-            <div className={controlsClassName}>
-                <p className={labelClassName}>
-                    Page {pageNumber || (numPages ? 1 : '--')} of{' '}
-                    {numPages || '--'}
-                </p>
-                <button
-                    type="button"
-                    disabled={pageNumber <= 1}
-                    onClick={previousPage}
-                    className={buttonClassName}
-                >
-                    Previous
-                </button>
-                <button
-                    type="button"
-                    disabled={pageNumber >= numPages}
-                    onClick={nextPage}
-                    className={buttonClassName}
-                >
-                    Next
-                </button>
-            </div>
-
             <div style={{display: 'flex'}}>
                 <div style={{flex: 1}}>{pdfContent}</div>
-                {annotationSidebar}
             </div>
-
-            <style jsx>{`
-                .annotation-toolbar {
-                    padding: 10px;
-                    border-bottom: 1px solid #e5e7eb;
-                    display: flex;
-                    gap: 8px;
-                }
-
-                .annotation-btn {
-                    padding: 8px 16px;
-                    border: 1px solid #d1d5db;
-                    background: white;
-                    border-radius: 4px;
-                    cursor: pointer;
-                }
-
-                .annotation-btn.active {
-                    background: #3b82f6;
-                    color: white;
-                }
-
-                .annotation-sidebar {
-                    width: 300px;
-                    padding: 16px;
-                    border-left: 1px solid #e5e7eb;
-                    background: #f9fafb;
-                    max-height: 600px;
-                    overflow-y: auto;
-                }
-
-                .annotation-item {
-                    background: white;
-                    padding: 12px;
-                    margin-bottom: 8px;
-                    border-radius: 4px;
-                    border: 1px solid #e5e7eb;
-                }
-
-                .annotation-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 8px;
-                }
-
-                .annotation-content {
-                    margin-bottom: 8px;
-                }
-
-                .comment-input,
-                .text-input {
-                    width: 100%;
-                    padding: 4px;
-                    border: 1px solid #d1d5db;
-                    border-radius: 2px;
-                    margin-top: 4px;
-                }
-
-                .annotation-meta {
-                    font-size: 12px;
-                    color: #6b7280;
-                }
-
-                .delete-btn {
-                    background: none;
-                    border: none;
-                    cursor: pointer;
-                    font-size: 14px;
-                }
-
-                .no-annotations {
-                    text-align: center;
-                    color: #6b7280;
-                    font-style: italic;
-                    padding: 20px;
-                }
-            `}</style>
         </div>
     );
 };
 
 _DashPdf.defaultProps = {
-    buttonClassName: '',
-    labelClassName: '',
-    controlsClassName: '',
     enableAnnotations: false,
     annotations: [],
     selectedAnnotationTool: 'comment',
-    annotationToolbarClassName: '',
-    annotationButtonClassName: '',
-    showAnnotationSidebar: false,
-    sidebarClassName: '',
     scale: 1.0,
+    pageNumber: 1,
 };
 
 _DashPdf.propTypes = {
@@ -674,19 +613,19 @@ _DashPdf.propTypes = {
     setProps: PropTypes.func,
 
     /**
-     * CSS class name for the Previous and Next buttons.
+     * Scale factor for PDF rendering.
      */
-    buttonClassName: PropTypes.string,
+    scale: PropTypes.number,
 
     /**
-     * CSS class name for the "Page X of Y" label.
+     * Current page number.
      */
-    labelClassName: PropTypes.string,
+    pageNumber: PropTypes.number,
 
     /**
-     * CSS class name for the parent div of label and buttons.
+     * Total number of pages (read-only).
      */
-    controlsClassName: PropTypes.string,
+    numPages: PropTypes.number,
 
     /**
      * Enable annotation functionality.
@@ -696,54 +635,26 @@ _DashPdf.propTypes = {
     /**
      * Array of annotation objects. Each annotation should have:
      * - id: unique identifier
-     * - type: 'comment', 'rectangle', or 'text'
+     * - type: 'comment', 'rectangle', 'text', or 'highlight'
      * - x, y: position coordinates
-     * - width, height: dimensions (for rectangles)
+     * - width, height: dimensions (for rectangles and highlights)
      * - page: page number
-     * - text: text content (for text annotations)
+     * - text: text content (for text annotations and selected text for highlights)
      * - comment: comment content (for comments)
+     * - color: highlight color (for highlights, hex format)
+     * - opacity: highlight opacity (for highlights, 0-1)
      */
     annotations: PropTypes.arrayOf(PropTypes.object),
 
     /**
-     * Currently selected annotation tool ('comment', 'rectangle', 'text').
+     * Currently selected annotation tool ('comment', 'rectangle', 'text', 'highlight').
      */
-    selectedAnnotationTool: PropTypes.oneOf(['comment', 'rectangle', 'text']),
-
-    /**
-     * CSS class name for the annotation toolbar.
-     */
-    annotationToolbarClassName: PropTypes.string,
-
-    /**
-     * CSS class name for annotation toolbar buttons.
-     */
-    annotationButtonClassName: PropTypes.string,
-
-    /**
-     * Whether to show the annotation sidebar.
-     */
-    showAnnotationSidebar: PropTypes.bool,
-
-    /**
-     * CSS class name for the annotation sidebar.
-     */
-    sidebarClassName: PropTypes.string,
-
-    /**
-     * Scale factor for PDF rendering.
-     */
-    scale: PropTypes.number,
-
-    /**
-     * Current page number (controlled).
-     */
-    pageNumber: PropTypes.number,
-
-    /**
-     * Total number of pages (read-only).
-     */
-    numPages: PropTypes.number,
+    selectedAnnotationTool: PropTypes.oneOf([
+        'comment',
+        'rectangle',
+        'text',
+        'highlight',
+    ]),
 
     /**
      * Callback fired when an annotation is added.
