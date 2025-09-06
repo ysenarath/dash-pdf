@@ -56,6 +56,9 @@ app.layout = html.Div(
                     buttonClassName="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mx-1",
                     labelClassName="text-gray-800 text-lg mb-2",
                     controlsClassName="flex flex-row items-center justify-center space-x-4",
+                    enableAnnotations=True,
+                    showAnnotationSidebar=True,
+                    annotations=[],
                 ),
             ],
             className="bg-white p-8 rounded-xl shadow-xl overflow-hidden",
@@ -101,6 +104,18 @@ app.layout = html.Div(
 )
 def update_pdf(n_clicks, n_submit, url):
     return load_pdf(url)
+
+
+@app.callback(
+    Output("pdf-viewer", "annotations"),
+    Input("pdf-viewer", "annotations"),
+    prevent_initial_call=True,
+)
+def handle_annotation_changes(annotations):
+    # Process annotation changes
+    # Save to database, etc.
+    print("Annotations updated:", annotations)
+    return annotations
 
 
 if __name__ == "__main__":
