@@ -478,7 +478,6 @@ const _DashPdf = (props) => {
                                 </button>
                             </div>
                         )}
-
                         {annotation.type === 'rectangle' && (
                             <div
                                 className="annotation-rectangle"
@@ -522,7 +521,6 @@ const _DashPdf = (props) => {
                                 </button>
                             </div>
                         )}
-
                         {annotation.type === 'text' && (
                             <div
                                 className="annotation-text"
@@ -576,39 +574,45 @@ const _DashPdf = (props) => {
                                 </button>
                             </div>
                         )}
-
                         {annotation.type === 'highlight' && (
-                            <div
-                                className="annotation-highlight"
-                                style={{
-                                    position: 'absolute',
-                                    left: annotation.x,
-                                    top: annotation.y,
-                                    width: annotation.width,
-                                    height: annotation.height,
-                                    backgroundColor:
-                                        annotation.color || '#ffff00',
-                                    opacity:
-                                        annotation.opacity || DEFAULT_OPACITY,
-                                    pointerEvents: 'none',
-                                    borderRadius: '2px',
-                                    zIndex: 1,
-                                }}
-                                title={
-                                    annotation.text
-                                        ? `"${annotation.text}"`
-                                        : 'Highlighted text'
-                                }
-                            >
+                            <>
+                                {/* Highlight area - no pointer events */}
+                                <div
+                                    className="annotation-highlight"
+                                    style={{
+                                        position: 'absolute',
+                                        left: annotation.x,
+                                        top: annotation.y,
+                                        width: annotation.width,
+                                        height: annotation.height,
+                                        backgroundColor:
+                                            annotation.color || '#ffff00',
+                                        opacity:
+                                            annotation.opacity ||
+                                            DEFAULT_OPACITY,
+                                        pointerEvents: 'none',
+                                        borderRadius: '2px',
+                                        zIndex: 1,
+                                    }}
+                                    title={
+                                        annotation.text
+                                            ? `"${annotation.text}"`
+                                            : 'Highlighted text'
+                                    }
+                                />
+                                {/* Delete button - separate element with pointer events */}
                                 <button
+                                    className="annotation-highlight-delete"
                                     onClick={(e) => {
+                                        console.log('delete highlight');
                                         e.stopPropagation();
                                         deleteAnnotation(annotation.id);
                                     }}
                                     style={{
                                         position: 'absolute',
-                                        top: '-8px',
-                                        right: '-8px',
+                                        left:
+                                            annotation.x + annotation.width - 8,
+                                        top: annotation.y - 8,
                                         width: '16px',
                                         height: '16px',
                                         backgroundColor: '#dc2626',
@@ -617,12 +621,13 @@ const _DashPdf = (props) => {
                                         borderRadius: '50%',
                                         fontSize: '10px',
                                         cursor: 'pointer',
-                                        pointerEvents: 'auto',
+                                        zIndex: 10,
+                                        pointerEvents: 'auto', // Explicitly enable pointer events
                                     }}
                                 >
                                     ×
                                 </button>
-                            </div>
+                            </>
                         )}
                     </div>
                 ))}
