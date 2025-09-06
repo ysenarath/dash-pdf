@@ -9,6 +9,7 @@ import './_DashPdf.react.css';
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const DEFAULT_OPACITY = 0.3;
+const MIN_DRAG_DISTANCE = 10;
 
 /**
  * _DashPdf is a component that renders a PDF with annotation capabilities.
@@ -202,13 +203,26 @@ const _DashPdf = (props) => {
         }
 
         if (isDrawing && currentAnnotation) {
-            const newAnnotations = [...currentAnnotations, currentAnnotation];
-            updateAnnotations(newAnnotations);
+            // Check if the user actually dragged (not just clicked)
+            const draggedDistance = Math.sqrt(
+                Math.pow(currentAnnotation.width, 2) +
+                    Math.pow(currentAnnotation.height, 2)
+            );
 
-            // Call callback if provided
-            if (onAnnotationAdd) {
-                onAnnotationAdd(currentAnnotation);
+            // Only create annotation if user dragged enough distance
+            if (draggedDistance >= MIN_DRAG_DISTANCE) {
+                const newAnnotations = [
+                    ...currentAnnotations,
+                    currentAnnotation,
+                ];
+                updateAnnotations(newAnnotations);
+
+                // Call callback if provided
+                if (onAnnotationAdd) {
+                    onAnnotationAdd(currentAnnotation);
+                }
             }
+            // If not dragged enough, don't create the annotation
 
             setCurrentAnnotation(null);
         }
@@ -568,6 +582,25 @@ const _DashPdf = (props) => {
                             backgroundColor: 'rgba(156, 163, 175, 0.1)',
                             pointerEvents: 'none',
                             zIndex: 5,
+                            // Add visual indication if drag distance is insufficient
+                            opacity: (() => {
+                                const dragDistance = Math.sqrt(
+                                    Math.pow(currentAnnotation.width, 2) +
+                                        Math.pow(currentAnnotation.height, 2)
+                                );
+                                return dragDistance >= MIN_DRAG_DISTANCE
+                                    ? 1
+                                    : 0.5;
+                            })(),
+                            borderColor: (() => {
+                                const dragDistance = Math.sqrt(
+                                    Math.pow(currentAnnotation.width, 2) +
+                                        Math.pow(currentAnnotation.height, 2)
+                                );
+                                return dragDistance >= MIN_DRAG_DISTANCE
+                                    ? '#6b7280'
+                                    : '#ef4444';
+                            })(),
                         }}
                     />
                 )}
