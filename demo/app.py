@@ -78,12 +78,6 @@ app.layout = html.Div(
                             **{"data-tool": "rectangle"},
                         ),
                         html.Button(
-                            [html.Span("📝", className="mr-2"), "Text"],
-                            id="tool-text",
-                            className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200",
-                            **{"data-tool": "text"},
-                        ),
-                        html.Button(
                             [html.Span("🖍️", className="mr-2"), "Highlight"],
                             id="tool-highlight",
                             className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200",
@@ -174,25 +168,23 @@ def update_pdf(n_clicks, n_submit, url):
         Output("tool-instructions", "children"),
         Output("tool-comment", "className"),
         Output("tool-rectangle", "className"),
-        Output("tool-text", "className"),
         Output("tool-highlight", "className"),
         Output("tool-none", "className"),
     ],
     [
         Input("tool-comment", "n_clicks"),
         Input("tool-rectangle", "n_clicks"),
-        Input("tool-text", "n_clicks"),
         Input("tool-highlight", "n_clicks"),
         Input("tool-none", "n_clicks"),
     ],
     prevent_initial_call=True,
 )
 def update_annotation_tool(
-    comment_clicks, rectangle_clicks, text_clicks, highlight_clicks, none_clicks
+    comment_clicks, rectangle_clicks, highlight_clicks, none_clicks
 ):
     ctx = dash.callback_context
     if not ctx.triggered:
-        return "none", "", "", "", "", "", ""
+        return "none", "", "", "", "", ""
 
     button_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
@@ -202,9 +194,8 @@ def update_annotation_tool(
 
     # Tool instructions
     instructions = {
-        "tool-comment": "Click on a tool to activate it. Current tool: Comment - Click anywhere on the PDF to add a comment.",
         "tool-rectangle": "Click on a tool to activate it. Current tool: Rectangle - Click and drag to draw a rectangle annotation.",
-        "tool-text": "Click on a tool to activate it. Current tool: Text - Click and drag to add a text annotation.",
+        "tool-comment": "Click on a tool to activate it. Current tool: Text - Click and drag to add a text annotation.",
         "tool-highlight": "Click on a tool to activate it. Current tool: Highlight - Select text on the PDF to highlight it.",
         "tool-none": "Click on a tool to activate it. Current tool: None - No annotation tool is active.",
     }
@@ -213,7 +204,6 @@ def update_annotation_tool(
     tool_mapping = {
         "tool-comment": "comment",
         "tool-rectangle": "rectangle",
-        "tool-text": "text",
         "tool-highlight": "highlight",
         "tool-none": "none",
     }
@@ -225,7 +215,6 @@ def update_annotation_tool(
         instructions.get(button_id, instructions["tool-comment"]),
         active_class if button_id == "tool-comment" else inactive_class,
         active_class if button_id == "tool-rectangle" else inactive_class,
-        active_class if button_id == "tool-text" else inactive_class,
         active_class if button_id == "tool-highlight" else inactive_class,
         active_class if button_id == "tool-none" else inactive_class,
     )
