@@ -1,122 +1,142 @@
 <p align="center">
-    <h1 align="center"><b>Dash PDF</b></h1>
+    <h1 align="center"><b>Dash PDF Plus</b></h1>
 	<p align="center">
-		Display PDFs in your Dash apps.
-    <br />
-    <br />
-    <br />
-    <img width="100" height="100" src="https://avatars.githubusercontent.com/u/60114551?s=200&v=4" alt="Ploomber Logo">
-    <br />
-    <b>  Made by <a href="https://ploomber.io/?utm_source=dash-pdf&utm_medium=github">Ploomber</a> with ❤️</b>
-    <br />
-    <br />
-    <i>Deploy your Dash application on <a href="https://www.platform.ploomber.io/register/?utm_source=dash-pdf&utm_medium=github">Ploomber.io</a> for free.</i>
-    <br />
+		Display and annotate PDFs in your Dash apps with enhanced features.
   </p>
 </p>
+
 <br/>
 
+## Features
 
-
-https://github.com/user-attachments/assets/bcc9ba7d-5110-4fb9-ba58-551684890ae9
-
-
-Live demo: [dash-pdf.ploomberapp.io](https://dash-pdf.ploomberapp.io/?utm_source=dash-pdf&utm_medium=github)
+-   **PDF Display**: Render PDF documents directly in your Dash applications
+-   **Interactive Annotations**: Add comments, highlights, and rectangle annotations
+-   **Navigation Controls**: Navigate through PDF pages with built-in controls
+-   **URL Loading**: Load PDFs from URLs or local files
+-   **Customizable UI**: Customize button and control styling
 
 ## Installation
 
 ```sh
-pip install dash-pdf
+pip install dash-pdf-plus
 ```
 
 ## Usage
 
-```python
-from dash import Dash, html
-import dash_pdf_plus as dash_pdf
-import requests
-from pathlib import Path
-import dash
+### Basic PDF Display
 
-dash._dash_renderer._set_react_version("18.2.0")
+```python
+import requests
+from dash import Dash, html
+
+import dash_pdf_plus
 
 app = Dash(__name__)
 
 # Download the PDF and read it as bytes
-url = 'https://css4.pub/2015/textbook/somatosensory.pdf'
+url = "https://css4.pub/2015/textbook/somatosensory.pdf"
 response = requests.get(url)
 pdf_bytes = response.content
 
 # Alternatively, you can read a local PDF file
 # pdf_bytes = Path('path/to/local/file.pdf').read_bytes()
 
-app.layout = html.Div([
-    dash_pdf.PDF(
-        id='pdf-viewer',
-        # Pass the PDF content as bytes, you can also pass a URL
-        data=pdf_bytes,
-        # use these to customize the class names
-        buttonClassName="",
-        labelClassName="",
-        controlsClassName="",
-    )
-])
+app.layout = html.Div(
+    [
+        dash_pdf_plus.DashPDF(
+            id="pdf-viewer",
+            data=pdf_bytes,
+            enableAnnotations=True,
+            selectedAnnotationTool="none",
+            annotations=[],
+        ),
+    ]
+)
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+if __name__ == "__main__":
+    app.run(debug=True)
 ```
 
-## Run demo locally
+### Advanced Usage with Annotations
+
+The demo application (`demo/app.py`) showcases advanced features including:
+
+-   **Annotation Tools**: Comment, rectangle, and highlight tools
+-   **Interactive Controls**: Load PDFs from URLs, navigate pages
+-   **Real-time Updates**: Handle annotation changes with callbacks
+-   **Responsive Design**: Bootstrap-based UI with resizable panels
+
+Key features demonstrated:
+
+-   PDF loading from URLs
+-   Annotation tool selection (comment, rectangle, highlight, none)
+-   Page navigation controls
+-   Annotation change handling
+-   Responsive layout with control panel
+
+## Run Demo Locally
 
 ```sh
 cd demo
-pip install -r requirements.txt
-python app.py
+uv venv
+uv pip install -r requirements.txt
+uv run app.py
 ```
 
 Open: http://localhost:8050
 
-
-## Documentation
-
-
-## Setup
+## Development Setup
 
 ```sh
-# install js dependencies
+# Install JavaScript dependencies
 npm install
-# install python package in editable mode
-pip install -e .
 
-# install other python dependencies
-pip install -r requirements.txt
-pip install -r tests/requirements.txt
+# Install Python package in editable mode
+uv venv
+uv pip install -e .
+
+# Install other Python dependencies
+uv pip install -r requirements.txt
+uv pip install -r tests/requirements.txt
 ```
 
-## Development
+## Development Workflow
 
 ```sh
+# Build the component
 npm run build
-python demo.py
+
+# Run the demo
+uv run demo/app.py
 ```
 
-
-## Release
+## Release Process
 
 ```sh
-# generate
+# Generate distribution files
 npm run build
-python setup.py sdist bdist_wheel
-ls dist
+# rm -rf dist
+uv build
 
-# test artifact
-pip install dash dist/dash_pdf_plus-0.0.1.tar.gz
-python demo/app.py
+# Test the artifact
+uv pip install dash dist/dash_pdf_plus-0.0.1.tar.gz
+uv run demo/app.py
 
-# upload
-pip install twine
+# Upload to PyPI
+uv pip install twine
 twine upload dist/*
 
-# clean up
+# Or with UV
+uv publish
+
+# Clean up
 rm -rf dist
 ```
+
+## Credits
+
+This project is derived from the original [dash-pdf](https://github.com/ploomber/dash-pdf) implementation by [Ploomber Inc.](https://ploomber.io/). We extend our gratitude to the original authors for their foundational work that made this enhanced version possible.
+
+## License
+
+See [LICENSE](LICENSE) file for details.
