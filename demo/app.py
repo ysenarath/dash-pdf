@@ -2,7 +2,7 @@ import base64
 
 import dash
 import requests
-from dash import Dash, Input, Output, State, dcc, html
+from dash import Dash, Input, Output, State, html
 import dash_bootstrap_components as dbc
 
 import dash_pdf_plus
@@ -136,8 +136,8 @@ app.layout = html.Div(
                             html.Span("❤️", className="text-danger"),
                             " by ",
                             html.A(
-                                "Ploomber",
-                                href="https://ploomber.io/?utm_source=dash-pdf&utm_medium=github",
+                                "Yasas",
+                                href="https://ysenarath.com",
                                 target="_blank",
                                 rel="noopener noreferrer",
                                 className="text-primary text-decoration-none",
@@ -146,7 +146,16 @@ app.layout = html.Div(
                             html.Span("⭐ on "),
                             html.A(
                                 "GitHub",
-                                href="https://github.com/ploomber/dash-pdf/?utm_source=dash-pdf&utm_medium=github",
+                                href="https://github.com/ysenarath/dash-pdf",
+                                target="_blank",
+                                rel="noopener noreferrer",
+                                className="text-primary text-decoration-none",
+                            ),
+                            " • ",
+                            html.Span("Inspired by "),
+                            html.A(
+                                "dash-pdf by ploomber",
+                                href="https://github.com/ploomber/dash-pdf",
                                 target="_blank",
                                 rel="noopener noreferrer",
                                 className="text-primary text-decoration-none",
