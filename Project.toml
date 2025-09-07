@@ -1,7 +1,7 @@
 
 name = "DashPdf"
 uuid = "1b08a953-4be3-4667-9a23-79005aad90b4"
-authors = ["Ploomber Inc. <contact@ploomber.io>"]
+authors = ["Yasas Senarath", "Ploomber Inc. <contact@ploomber.io>"]
 version = "0.0.1"
 
 [deps]
