@@ -169,12 +169,12 @@ app.layout = html.Div(
             style={
                 "width": "350px",
                 "height": "100%",
-                "overflow-y": "auto",
-                "background-color": "#f8f9fa",
-                "border-right": "3px solid #dee2e6",
+                "overflowY": "auto",
+                "backgroundColor": "#f8f9fa",
+                "borderRight": "3px solid #dee2e6",
                 "resize": "horizontal",
-                "min-width": "300px",
-                "max-width": "500px",
+                "minWidth": "300px",
+                "maxWidth": "500px",
             },
         ),
         # Right panel - PDF Viewer
