@@ -13,7 +13,7 @@ long_description = (here / "README.md").read_text()
 package_name = package["name"].replace(" ", "_").replace("-", "_")
 
 setup(
-    name=package_name,
+    name=package_name.replace("_", "-"),
     version=package["version"],
     author=package["author"],
     packages=[package_name],

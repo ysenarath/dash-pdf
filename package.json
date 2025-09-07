@@ -1,7 +1,7 @@
 {
     "name": "dash_pdf_plus",
     "version": "0.0.1",
-    "description": "pdf for Dash",
+    "description": "A Dash component library for rendering PDF documents with enhanced features.",
     "repository": {
         "type": "git",
         "url": "git://github.com/ysenarath/dash-pdf.git"
@@ -21,7 +21,7 @@
         "build": "npm run build:js && npm run build:backends",
         "build:activated": "npm run build:js && npm run build:backends-activated"
     },
-    "author": "Ploomber Inc. <contact@ysenarath.io>",
+    "author": "Yasas Senarath",
     "license": "Apache-2.0",
     "dependencies": {
         "ramda": "^0.26.1",
