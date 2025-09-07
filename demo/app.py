@@ -108,7 +108,7 @@ app.layout = html.Div(
         # PDF Viewer Section
         html.Div(
             [
-                dash_pdf_highlighter.PDF(
+                dash_pdf_highlighter.DashPDF(
                     id="pdf-viewer",
                     data=load_pdf(DEFAULT_URL),
                     enableAnnotations=True,

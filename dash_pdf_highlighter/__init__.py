@@ -1,14 +1,15 @@
 from __future__ import print_function as _
 
+import base64
+import json
 import os as _os
 import sys as _sys
-import json
 
 import dash as _dash
+import requests
 
 # noinspection PyUnresolvedReferences
-from ._imports_ import *
-from ._imports_ import __all__
+from ._imports_ import __all__, _DashPdf
 
 if not hasattr(_dash, "__plotly_dash") and not hasattr(_dash, "development"):
     print(
@@ -75,6 +76,12 @@ _js_dist.extend(
             "namespace": package_name,
             "dynamic": True,
         },
+        # add pdf.worker.min.mjs
+        {
+            "relative_package_path": "pdf.worker.min.mjs",
+            "namespace": package_name,
+            "dynamic": True,
+        },
     ]
 )
 
@@ -86,5 +93,17 @@ for _component in __all__:
     setattr(locals()[_component], "_css_dist", _css_dist)
 
 
-# PUBLIC API
-from dash_pdf_highlighter.pdf import PDF
+class DashPDF(_DashPdf):
+    def __init__(self, id, data, **kwargs):
+        if isinstance(data, str) and (
+            data.startswith("http://") or data.startswith("https://")
+        ):
+            response = requests.get(data)
+            pdf_content = response.content
+            pdf_base64 = base64.b64encode(pdf_content).decode("utf-8")
+            data = f"data:application/pdf;base64,{pdf_base64}"
+        elif isinstance(data, bytes):
+            data = (
+                f"data:application/pdf;base64,{base64.b64encode(data).decode('utf-8')}"
+            )
+        super().__init__(id=id, data=data, **kwargs)

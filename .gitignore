@@ -3,7 +3,7 @@ inst/
 man/
 R/
 src/jl
-src/DashPdf.jl
+src/DashPDF.jl
 dash_pdf_highlighter/*
 !dash_pdf_highlighter/__init__.py
 !dash_pdf_highlighter/pdf.py
