@@ -68,11 +68,11 @@ _js_dist.extend(
 _js_dist.extend(
     [
         {
-            "relative_package_path": "dash_pdf_highlighter.min.js",
+            "relative_package_path": "dash_pdf_plus.min.js",
             "namespace": package_name,
         },
         {
-            "relative_package_path": "dash_pdf_highlighter.min.js.map",
+            "relative_package_path": "dash_pdf_plus.min.js.map",
             "namespace": package_name,
             "dynamic": True,
         },

@@ -7,7 +7,7 @@ import './_DashPdf.react.css';
 
 // pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 pdfjs.GlobalWorkerOptions.workerSrc =
-    '/_dash-component-suites/dash_pdf_highlighter/pdf.worker.min.mjs';
+    '/_dash-component-suites/dash_pdf_plus/pdf.worker.min.mjs';
 
 const DEFAULT_OPACITY = 0.3;
 const DISABLED_OPACITY = 0.7;

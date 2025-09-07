@@ -4,9 +4,9 @@ man/
 R/
 src/jl
 src/DashPDF.jl
-dash_pdf_highlighter/*
-!dash_pdf_highlighter/__init__.py
-!dash_pdf_highlighter/pdf.py
+dash_pdf_plus/*
+!dash_pdf_plus/__init__.py
+!dash_pdf_plus/pdf.py
 NAMESPACE
 *.min.*
 

@@ -100,7 +100,7 @@ module.exports = (env, argv) => {
                         chunks: 'all',
                         minSize: 0,
                         minChunks: 2,
-                        name: 'dash_pdf_highlighter-shared',
+                        name: 'dash_pdf_plus-shared',
                     },
                 },
             },
@@ -115,7 +115,7 @@ module.exports = (env, argv) => {
                 patterns: [
                     {
                         from: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
-                        to: '../dash_pdf_highlighter/',
+                        to: '../dash_pdf_plus/',
                     },
                 ],
             }),

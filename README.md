@@ -33,7 +33,7 @@ pip install dash-pdf
 
 ```python
 from dash import Dash, html
-import dash_pdf_highlighter as dash_pdf
+import dash_pdf_plus as dash_pdf
 import requests
 from pathlib import Path
 import dash
@@ -110,7 +110,7 @@ python setup.py sdist bdist_wheel
 ls dist
 
 # test artifact
-pip install dash dist/dash_pdf_highlighter-0.0.1.tar.gz
+pip install dash dist/dash_pdf_plus-0.0.1.tar.gz
 python demo/app.py
 
 # upload

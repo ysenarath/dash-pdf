@@ -10,7 +10,7 @@ import sys
 import importlib
 
 
-components_package = "dash_pdf_highlighter"
+components_package = "dash_pdf_plus"
 
 components_lib = importlib.import_module(components_package)
 

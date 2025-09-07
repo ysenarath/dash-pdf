@@ -1,4 +1,4 @@
-import dash_pdf_highlighter
+import dash_pdf_plus
 from dash import Dash, html, dcc, Input, Output, State
 import requests
 import base64
@@ -108,7 +108,7 @@ app.layout = html.Div(
         # PDF Viewer Section
         html.Div(
             [
-                dash_pdf_highlighter.DashPDF(
+                dash_pdf_plus.DashPDF(
                     id="pdf-viewer",
                     data=load_pdf(DEFAULT_URL),
                     enableAnnotations=True,

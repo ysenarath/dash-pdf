@@ -1,5 +1,5 @@
 {
-    "name": "dash_pdf_highlighter",
+    "name": "dash_pdf_plus",
     "version": "0.0.1",
     "description": "pdf for Dash",
     "repository": {
@@ -16,7 +16,7 @@
         "validate-init": "python _validate_init.py",
         "prepublishOnly": "npm run validate-init",
         "build:js": "webpack --mode production",
-        "build:backends": "dash-generate-components ./src/lib/components dash_pdf_highlighter -p package-info.json --ignore \\.test\\.",
+        "build:backends": "dash-generate-components ./src/lib/components dash_pdf_plus -p package-info.json --ignore \\.test\\.",
         "build:backends-activated": "(. venv/bin/activate || venv\\scripts\\activate && npm run build:backends)",
         "build": "npm run build:js && npm run build:backends",
         "build:activated": "npm run build:js && npm run build:backends-activated"
