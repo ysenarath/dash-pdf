@@ -2,6 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 const WebpackDashDynamicImport = require('@plotly/webpack-dash-dynamic-import');
 const packagejson = require('./package.json');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 const dashLibraryName = packagejson.name.replace(/-/g, '_');
 
@@ -109,6 +110,14 @@ module.exports = (env, argv) => {
             new webpack.SourceMapDevToolPlugin({
                 filename: '[file].map',
                 exclude: ['async-plotlyjs'],
+            }),
+            new CopyWebpackPlugin({
+                patterns: [
+                    {
+                        from: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
+                        to: '../dash_pdf_highlighter/',
+                    },
+                ],
             }),
         ],
     };
