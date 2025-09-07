@@ -1,5 +1,8 @@
-include dash_pdf_plus/dash_pdf.min.js
-include dash_pdf_plus/dash_pdf.min.js.map
+include dash_pdf_plus/dash_pdf_plus.min.js
+include dash_pdf_plus/dash_pdf_plus.min.js.LICENSE.txt
+include dash_pdf_plus/dash_pdf_plus.min.js.map
+include dash_pdf_plus/pdf.worker.min.mjs
+include dash_pdf_plus/pdf.worker.min.mjs.LICENSE.txt
 include dash_pdf_plus/async-*.js
 include dash_pdf_plus/async-*.js.map
 include dash_pdf_plus/*-shared.js
