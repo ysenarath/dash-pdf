@@ -5,7 +5,9 @@ import {pdfjs, Document, Page} from 'react-pdf';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import './_DashPdf.react.css';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc =
+    '/_dash-component-suites/dash_pdf_highlighter/pdf.worker.min.mjs';
 
 const DEFAULT_OPACITY = 0.3;
 const DISABLED_OPACITY = 0.7;
@@ -293,20 +295,20 @@ const createAnnotationComponent = (annotation, handlers) => {
 /**
  * _DashPdf is a component that renders a PDF with annotation capabilities.
  */
-const _DashPdf = (props) => {
-    const {
-        id,
-        data,
-        setProps,
-        enableAnnotations,
-        annotations,
-        selectedAnnotationTool,
-        scale,
-        onAnnotationAdd,
-        onAnnotationDelete,
-        onAnnotationUpdate,
-        pageNumber,
-    } = props;
+const _DashPdf = ({
+    id,
+    data,
+    enableAnnotations = false,
+    annotations = [],
+    selectedAnnotationTool = 'none',
+    scale = 1.0,
+    onAnnotationAdd = null,
+    onAnnotationDelete = null,
+    onAnnotationUpdate = null,
+    pageNumber = 1,
+    setProps,
+}) => {
+    // const  = props;
 
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentAnnotation, setCurrentAnnotation] = useState(null);
@@ -638,6 +640,9 @@ const _DashPdf = (props) => {
                         <Document
                             file={data}
                             onLoadSuccess={onDocumentLoadSuccess}
+                            onLoadError={(error) =>
+                                console.error('Error loading PDF:', error)
+                            }
                         >
                             <Page
                                 ref={pageRef}
@@ -673,13 +678,13 @@ const _DashPdf = (props) => {
     );
 };
 
-_DashPdf.defaultProps = {
-    enableAnnotations: false,
-    annotations: [],
-    selectedAnnotationTool: 'none',
-    scale: 1.0,
-    pageNumber: 1,
-};
+// _DashPdf.defaultProps = {
+//     enableAnnotations: false,
+//     annotations: [],
+//     selectedAnnotationTool: 'none',
+//     scale: 1.0,
+//     pageNumber: 1,
+// };
 
 _DashPdf.propTypes = {
     /** Unique identifier for the component */
