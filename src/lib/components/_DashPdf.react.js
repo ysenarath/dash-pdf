@@ -315,7 +315,6 @@ const _DashPdf = ({
     const [isTextSelecting, setIsTextSelecting] = useState(false);
 
     const containerRef = useRef(null);
-    const pageRef = useRef(null);
 
     // Check if annotation tools are active (not 'none')
     const isAnnotationToolActive =
@@ -645,7 +644,6 @@ const _DashPdf = ({
                             }
                         >
                             <Page
-                                ref={pageRef}
                                 pageNumber={pageNumber}
                                 scale={scale}
                                 renderTextLayer={true}
