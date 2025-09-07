@@ -1,15 +1,16 @@
-import dash_pdf_plus
-from dash import Dash, html, dcc, Input, Output, State
-import requests
 import base64
-import dash
 
-# Initialize the app with Tailwind CSS
+import dash
+import requests
+from dash import Dash, Input, Output, State, dcc, html
+import dash_bootstrap_components as dbc
+
+import dash_pdf_plus
+
+# Initialize the app with Bootstrap CSS
 app = Dash(
     __name__,
-    external_stylesheets=[
-        "https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
-    ],
+    external_stylesheets=[dbc.themes.BOOTSTRAP],
 )
 server = app.server
 
@@ -28,126 +29,172 @@ def load_pdf(url):
 # App layout
 app.layout = html.Div(
     [
-        html.H1(
-            "Dash PDF with Annotation Tools",
-            className="text-4xl font-bold text-center my-8 text-gray-800",
-        ),
-        # PDF URL Input Section
+        # Left panel - Controls
         html.Div(
             [
-                dcc.Input(
-                    id="pdf-url-input",
-                    type="text",
-                    placeholder="Enter PDF URL",
-                    value=DEFAULT_URL,
-                    className="flex-grow px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500",
-                ),
-                html.Button(
-                    "Load PDF",
-                    id="load-pdf-button",
-                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-md",
-                ),
-            ],
-            className="w-full max-w-md mb-6 flex",
-        ),
-        # Annotation Tools Section
-        html.Div(
-            [
-                html.H3(
-                    "Annotation Tools",
-                    className="text-lg font-semibold mb-3 text-gray-700",
-                ),
-                html.Div(
-                    [
-                        html.Button(
-                            [html.Span("❌", className="mr-2"), "None"],
-                            id="tool-none",
-                            className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200",
-                            **{"data-tool": "none"},
-                        ),
-                        html.Button(
-                            [html.Span("💬", className="mr-2"), "Comment"],
-                            id="tool-comment",
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200",
-                            **{"data-tool": "comment"},
-                        ),
-                        html.Button(
-                            [html.Span("⬜", className="mr-2"), "Rectangle"],
-                            id="tool-rectangle",
-                            className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200",
-                            **{"data-tool": "rectangle"},
-                        ),
-                        html.Button(
-                            [html.Span("🖍️", className="mr-2"), "Highlight"],
-                            id="tool-highlight",
-                            className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200",
-                            **{"data-tool": "highlight"},
-                        ),
-                        # page navigation buttons could be added here
-                        html.Button(
-                            [html.Span("⬅️", className="mr-2"), "Prev Page"],
-                            id="prev-page-button",
-                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded-md transition-colors duration-200",
-                        ),
-                        html.Button(
-                            [html.Span("➡️", className="mr-2"), "Next Page"],
-                            id="next-page-button",
-                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded-md transition-colors duration-200",
-                        ),
-                    ],
-                    className="flex flex-wrap gap-2",
-                ),
-                html.P(
-                    id="tool-instructions",
-                    className="text-sm text-gray-600 mt-3 italic",
-                    children="Click on a tool to activate it. Current tool: Comment - Click anywhere on the PDF to add a comment.",
-                ),
-            ],
-            className="mb-6 p-4 bg-gray-50 rounded-lg",
-        ),
-        # PDF Viewer Section
-        html.Div(
-            [
-                dash_pdf_plus.DashPDF(
-                    id="pdf-viewer",
-                    data=load_pdf(DEFAULT_URL),
-                    enableAnnotations=True,
-                    selectedAnnotationTool="none",
-                    annotations=[],
-                ),
-            ],
-            className="bg-white p-8 rounded-xl shadow-xl overflow-hidden",
-        ),
-        # Footer
-        html.Footer(
-            html.P(
-                [
-                    "Made with ",
-                    html.Span("❤️", className="text-red-500"),
-                    " by ",
-                    html.A(
-                        "Ploomber",
-                        href="https://ploomber.io/?utm_source=dash-pdf&utm_medium=github",
-                        target="_blank",
-                        rel="noopener noreferrer",
-                        className="text-blue-500 hover:text-blue-700 underline",
+                # PDF URL Input Section
+                dbc.Card(
+                    dbc.CardBody(
+                        [
+                            html.H5("Load PDF", className="card-title mb-3"),
+                            dbc.InputGroup(
+                                [
+                                    dbc.Input(
+                                        id="pdf-url-input",
+                                        type="text",
+                                        placeholder="Enter PDF URL",
+                                        value=DEFAULT_URL,
+                                    ),
+                                    dbc.Button(
+                                        "Load",
+                                        id="load-pdf-button",
+                                        color="primary",
+                                        className="fw-bold",
+                                    ),
+                                ],
+                            ),
+                        ]
                     ),
-                    " • ",
-                    html.Span("⭐ on "),
-                    html.A(
-                        "GitHub",
-                        href="https://github.com/ploomber/dash-pdf/?utm_source=dash-pdf&utm_medium=github",
-                        target="_blank",
-                        rel="noopener noreferrer",
-                        className="text-blue-500 hover:text-blue-700 underline",
+                    className="mb-3",
+                ),
+                # Annotation Tools Section
+                dbc.Card(
+                    dbc.CardBody(
+                        [
+                            html.H5("Annotation Tools", className="card-title mb-3"),
+                            html.Div(
+                                [
+                                    # Annotation Tools Group
+                                    dbc.ButtonGroup(
+                                        [
+                                            dbc.Button(
+                                                "❌",
+                                                id="tool-none",
+                                                color="secondary",
+                                                outline=True,
+                                                className="fw-medium",
+                                            ),
+                                            dbc.Button(
+                                                "💬",
+                                                id="tool-comment",
+                                                color="warning",
+                                                outline=True,
+                                                className="fw-medium",
+                                            ),
+                                            dbc.Button(
+                                                "⬜",
+                                                id="tool-rectangle",
+                                                color="secondary",
+                                                outline=True,
+                                                className="fw-medium",
+                                            ),
+                                            dbc.Button(
+                                                "🖍️",
+                                                id="tool-highlight",
+                                                color="secondary",
+                                                outline=True,
+                                                className="fw-medium",
+                                            ),
+                                        ],
+                                        className="mb-3 d-flex flex-wrap",
+                                    ),
+                                    # Navigation Tools Group
+                                    dbc.ButtonGroup(
+                                        [
+                                            dbc.Button(
+                                                "⬅️",
+                                                id="prev-page-button",
+                                                color="primary",
+                                                outline=True,
+                                                className="fw-medium",
+                                            ),
+                                            dbc.Button(
+                                                "➡️",
+                                                id="next-page-button",
+                                                color="primary",
+                                                outline=True,
+                                                className="fw-medium",
+                                            ),
+                                        ],
+                                        className="mb-3",
+                                    ),
+                                    html.P(
+                                        id="tool-instructions",
+                                        className="small text-muted fst-italic",
+                                        children="Click on a tool to activate it. Current tool: Comment - Click anywhere on the PDF to add a comment.",
+                                    ),
+                                ]
+                            ),
+                        ]
                     ),
-                ],
-                className="text-center text-gray-600 mt-8",
+                ),
+                # Footer
+                html.Footer(
+                    html.P(
+                        [
+                            "Made with ",
+                            html.Span("❤️", className="text-danger"),
+                            " by ",
+                            html.A(
+                                "Ploomber",
+                                href="https://ploomber.io/?utm_source=dash-pdf&utm_medium=github",
+                                target="_blank",
+                                rel="noopener noreferrer",
+                                className="text-primary text-decoration-none",
+                            ),
+                            " • ",
+                            html.Span("⭐ on "),
+                            html.A(
+                                "GitHub",
+                                href="https://github.com/ploomber/dash-pdf/?utm_source=dash-pdf&utm_medium=github",
+                                target="_blank",
+                                rel="noopener noreferrer",
+                                className="text-primary text-decoration-none",
+                            ),
+                        ],
+                        className="text-center text-muted mt-4 small",
+                    ),
+                ),
+            ],
+            className="p-3",
+            style={
+                "width": "350px",
+                "height": "100%",
+                "overflow-y": "auto",
+                "background-color": "#f8f9fa",
+                "border-right": "3px solid #dee2e6",
+                "resize": "horizontal",
+                "min-width": "300px",
+                "max-width": "500px",
+            },
+        ),
+        # Right panel - PDF Viewer
+        html.Div(
+            dbc.Card(
+                dbc.CardBody(
+                    dash_pdf_plus.DashPDF(
+                        id="pdf-viewer",
+                        data=load_pdf(DEFAULT_URL),
+                        enableAnnotations=True,
+                        selectedAnnotationTool="none",
+                        annotations=[],
+                    ),
+                    className="p-2",
+                ),
+                className="h-100 shadow-lg border-0",
             ),
-            className="mt-auto",
+            style={
+                "flex": "1",
+                "height": "100%",
+                "overflow": "hidden",
+                "padding": "10px",
+            },
         ),
     ],
-    className="min-h-screen bg-gradient-to-r from-blue-100 to-green-100 p-6 flex flex-col items-center justify-center",
+    style={
+        "display": "flex",
+        "height": "100vh",
+    },
 )
 
 
@@ -166,10 +213,10 @@ def update_pdf(n_clicks, n_submit, url):
     [
         Output("pdf-viewer", "selectedAnnotationTool"),
         Output("tool-instructions", "children"),
-        Output("tool-comment", "className"),
-        Output("tool-rectangle", "className"),
-        Output("tool-highlight", "className"),
-        Output("tool-none", "className"),
+        Output("tool-comment", "outline"),
+        Output("tool-rectangle", "outline"),
+        Output("tool-highlight", "outline"),
+        Output("tool-none", "outline"),
     ],
     [
         Input("tool-comment", "n_clicks"),
@@ -184,13 +231,9 @@ def update_annotation_tool(
 ):
     ctx = dash.callback_context
     if not ctx.triggered:
-        return "none", "", "", "", "", ""
+        return "none", "", True, True, True, False
 
     button_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-    # Base classes for inactive and active buttons
-    inactive_class = "bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
-    active_class = "bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 ring-2 ring-yellow-300"
 
     # Tool instructions
     instructions = {
@@ -213,10 +256,10 @@ def update_annotation_tool(
     return (
         selected_tool,
         instructions.get(button_id, instructions["tool-comment"]),
-        active_class if button_id == "tool-comment" else inactive_class,
-        active_class if button_id == "tool-rectangle" else inactive_class,
-        active_class if button_id == "tool-highlight" else inactive_class,
-        active_class if button_id == "tool-none" else inactive_class,
+        False if button_id == "tool-comment" else True,  # comment outline
+        False if button_id == "tool-rectangle" else True,  # rectangle outline
+        False if button_id == "tool-highlight" else True,  # highlight outline
+        False if button_id == "tool-none" else True,  # none outline
     )
 
 
