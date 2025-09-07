@@ -60,6 +60,12 @@ app.layout = html.Div(
                 html.Div(
                     [
                         html.Button(
+                            [html.Span("❌", className="mr-2"), "None"],
+                            id="tool-none",
+                            className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200",
+                            **{"data-tool": "none"},
+                        ),
+                        html.Button(
                             [html.Span("💬", className="mr-2"), "Comment"],
                             id="tool-comment",
                             className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200",
@@ -112,7 +118,7 @@ app.layout = html.Div(
                     id="pdf-viewer",
                     data=load_pdf(DEFAULT_URL),
                     enableAnnotations=True,
-                    selectedAnnotationTool="comment",
+                    selectedAnnotationTool="none",
                     annotations=[],
                 ),
             ],
@@ -165,26 +171,28 @@ def update_pdf(n_clicks, n_submit, url):
 @app.callback(
     [
         Output("pdf-viewer", "selectedAnnotationTool"),
+        Output("tool-instructions", "children"),
         Output("tool-comment", "className"),
         Output("tool-rectangle", "className"),
         Output("tool-text", "className"),
         Output("tool-highlight", "className"),
-        Output("tool-instructions", "children"),
+        Output("tool-none", "className"),
     ],
     [
         Input("tool-comment", "n_clicks"),
         Input("tool-rectangle", "n_clicks"),
         Input("tool-text", "n_clicks"),
         Input("tool-highlight", "n_clicks"),
+        Input("tool-none", "n_clicks"),
     ],
     prevent_initial_call=True,
 )
 def update_annotation_tool(
-    comment_clicks, rectangle_clicks, text_clicks, highlight_clicks
+    comment_clicks, rectangle_clicks, text_clicks, highlight_clicks, none_clicks
 ):
     ctx = dash.callback_context
     if not ctx.triggered:
-        return "comment", "", "", "", "", ""
+        return "none", "", "", "", "", "", ""
 
     button_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
@@ -198,6 +206,7 @@ def update_annotation_tool(
         "tool-rectangle": "Click on a tool to activate it. Current tool: Rectangle - Click and drag to draw a rectangle annotation.",
         "tool-text": "Click on a tool to activate it. Current tool: Text - Click and drag to add a text annotation.",
         "tool-highlight": "Click on a tool to activate it. Current tool: Highlight - Select text on the PDF to highlight it.",
+        "tool-none": "Click on a tool to activate it. Current tool: None - No annotation tool is active.",
     }
 
     # Tool mapping
@@ -206,17 +215,19 @@ def update_annotation_tool(
         "tool-rectangle": "rectangle",
         "tool-text": "text",
         "tool-highlight": "highlight",
+        "tool-none": "none",
     }
 
     selected_tool = tool_mapping.get(button_id, "comment")
 
     return (
         selected_tool,
+        instructions.get(button_id, instructions["tool-comment"]),
         active_class if button_id == "tool-comment" else inactive_class,
         active_class if button_id == "tool-rectangle" else inactive_class,
         active_class if button_id == "tool-text" else inactive_class,
         active_class if button_id == "tool-highlight" else inactive_class,
-        instructions.get(button_id, instructions["tool-comment"]),
+        active_class if button_id == "tool-none" else inactive_class,
     )
 
 

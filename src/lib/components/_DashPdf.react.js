@@ -72,6 +72,10 @@ const _DashPdf = (props) => {
     const containerRef = useRef(null);
     const pageRef = useRef(null);
 
+    // Check if annotation tools are active (not 'none')
+    const isAnnotationToolActive =
+        enableAnnotations && selectedAnnotationTool !== 'none';
+
     // Utility functions
     const updateProps = useCallback(
         (updates) => {
@@ -155,7 +159,7 @@ const _DashPdf = (props) => {
 
     // Text selection for highlighting
     const handleTextSelection = useCallback(() => {
-        if (!enableAnnotations || selectedAnnotationTool !== 'highlight')
+        if (!isAnnotationToolActive || selectedAnnotationTool !== 'highlight')
             return;
 
         const selection = window.getSelection();
@@ -188,7 +192,7 @@ const _DashPdf = (props) => {
             selection.removeAllRanges();
         }
     }, [
-        enableAnnotations,
+        isAnnotationToolActive,
         selectedAnnotationTool,
         createAnnotation,
         addAnnotation,
@@ -196,8 +200,9 @@ const _DashPdf = (props) => {
 
     // Selection change listeners
     useEffect(() => {
-        if (!enableAnnotations || selectedAnnotationTool !== 'highlight')
-            return;
+        if (!isAnnotationToolActive || selectedAnnotationTool !== 'highlight') {
+            return undefined;
+        }
 
         const handleSelectionChange = () => {
             const selection = window.getSelection();
@@ -216,6 +221,7 @@ const _DashPdf = (props) => {
         document.addEventListener('selectionchange', handleSelectionChange);
         document.addEventListener('mouseup', handleMouseUp);
 
+        // Return cleanup function
         return () => {
             document.removeEventListener(
                 'selectionchange',
@@ -223,15 +229,16 @@ const _DashPdf = (props) => {
             );
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [enableAnnotations, selectedAnnotationTool, handleTextSelection]);
+    }, [isAnnotationToolActive, selectedAnnotationTool, handleTextSelection]);
 
     // Drawing handlers for rectangle and text tools
     const handleMouseDown = useCallback(
         (e) => {
             if (
-                !enableAnnotations ||
+                !isAnnotationToolActive ||
                 selectedAnnotationTool === 'highlight' ||
                 selectedAnnotationTool === 'comment' ||
+                selectedAnnotationTool === 'none' ||
                 e.target.closest(
                     '.annotation-comment, .annotation-rectangle, .annotation-text'
                 )
@@ -255,7 +262,7 @@ const _DashPdf = (props) => {
             setCurrentAnnotation(newAnnotation);
         },
         [
-            enableAnnotations,
+            isAnnotationToolActive,
             selectedAnnotationTool,
             getRelativePosition,
             createAnnotation,
@@ -268,6 +275,7 @@ const _DashPdf = (props) => {
                 !isDrawing ||
                 !currentAnnotation ||
                 selectedAnnotationTool === 'highlight' ||
+                selectedAnnotationTool === 'none' ||
                 isTextSelecting
             ) {
                 return;
@@ -290,7 +298,12 @@ const _DashPdf = (props) => {
     );
 
     const handleMouseUp = useCallback(() => {
-        if (selectedAnnotationTool === 'highlight' || isTextSelecting) return;
+        if (
+            selectedAnnotationTool === 'highlight' ||
+            selectedAnnotationTool === 'none' ||
+            isTextSelecting
+        )
+            return;
 
         if (isDrawing && currentAnnotation) {
             const draggedDistance = Math.sqrt(
@@ -317,7 +330,7 @@ const _DashPdf = (props) => {
     const addCommentAnnotation = useCallback(
         (e) => {
             if (
-                !enableAnnotations ||
+                !isAnnotationToolActive ||
                 selectedAnnotationTool !== 'comment' ||
                 e.target.closest(
                     '.annotation-comment, .annotation-rectangle, .annotation-text, .annotation-highlight'
@@ -339,7 +352,7 @@ const _DashPdf = (props) => {
             addAnnotation(commentAnnotation);
         },
         [
-            enableAnnotations,
+            isAnnotationToolActive,
             selectedAnnotationTool,
             getRelativePosition,
             createAnnotation,
@@ -349,6 +362,10 @@ const _DashPdf = (props) => {
 
     // Get appropriate mouse handlers based on selected tool
     const getMouseHandlers = useCallback(() => {
+        if (!isAnnotationToolActive || selectedAnnotationTool === 'none') {
+            return {};
+        }
+
         switch (selectedAnnotationTool) {
             case 'highlight':
                 return {};
@@ -362,6 +379,7 @@ const _DashPdf = (props) => {
                 };
         }
     }, [
+        isAnnotationToolActive,
         selectedAnnotationTool,
         addCommentAnnotation,
         handleMouseDown,
@@ -369,20 +387,26 @@ const _DashPdf = (props) => {
         handleMouseUp,
     ]);
 
-    // Render delete button component
+    // Render delete button component (only show when tool is not 'none')
     const DeleteButton = useCallback(
-        ({annotationId, style = {}}) => (
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    deleteAnnotation(annotationId);
-                }}
-                style={{...DELETE_BUTTON_STYLE, ...style}}
-            >
-                ×
-            </button>
-        ),
-        [deleteAnnotation]
+        ({annotationId, style = {}}) => {
+            if (selectedAnnotationTool === 'none') {
+                return null;
+            }
+
+            return (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        deleteAnnotation(annotationId);
+                    }}
+                    style={{...DELETE_BUTTON_STYLE, ...style}}
+                >
+                    ×
+                </button>
+            );
+        },
+        [deleteAnnotation, selectedAnnotationTool]
     );
 
     // Render individual annotation components
@@ -415,7 +439,10 @@ const _DashPdf = (props) => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                cursor: 'pointer',
+                                cursor:
+                                    selectedAnnotationTool === 'none'
+                                        ? 'default'
+                                        : 'pointer',
                                 fontSize: '12px',
                                 zIndex: 10,
                             }}
@@ -466,11 +493,13 @@ const _DashPdf = (props) => {
                                 type="text"
                                 value={annotation.text}
                                 onChange={(e) =>
+                                    selectedAnnotationTool !== 'none' &&
                                     updateAnnotation(annotation.id, {
                                         text: e.target.value,
                                     })
                                 }
                                 onClick={(e) => e.stopPropagation()}
+                                disabled={selectedAnnotationTool === 'none'}
                                 style={{
                                     backgroundColor:
                                         ANNOTATION_STYLES.text.backgroundColor,
@@ -479,6 +508,14 @@ const _DashPdf = (props) => {
                                     fontSize: '14px',
                                     borderRadius: '4px',
                                     minWidth: '80px',
+                                    cursor:
+                                        selectedAnnotationTool === 'none'
+                                            ? 'default'
+                                            : 'text',
+                                    opacity:
+                                        selectedAnnotationTool === 'none'
+                                            ? 0.7
+                                            : 1,
                                 }}
                             />
                             <DeleteButton annotationId={annotation.id} />
@@ -530,7 +567,7 @@ const _DashPdf = (props) => {
                     return null;
             }
         },
-        [updateAnnotation, DeleteButton]
+        [updateAnnotation, DeleteButton, selectedAnnotationTool]
     );
 
     // Filter annotations for current page
@@ -557,6 +594,10 @@ const _DashPdf = (props) => {
                                 selectedAnnotationTool === 'highlight'
                                     ? 'text'
                                     : 'none',
+                            cursor:
+                                selectedAnnotationTool === 'none'
+                                    ? 'default'
+                                    : 'auto',
                         }}
                         {...mouseHandlers}
                     >
@@ -578,9 +619,10 @@ const _DashPdf = (props) => {
                             currentPageAnnotations.map(renderAnnotation)}
 
                         {/* Current drawing annotation preview */}
-                        {enableAnnotations &&
+                        {isAnnotationToolActive &&
                             currentAnnotation &&
-                            selectedAnnotationTool !== 'highlight' && (
+                            selectedAnnotationTool !== 'highlight' &&
+                            selectedAnnotationTool !== 'none' && (
                                 <div
                                     className="annotation-drawing"
                                     style={{
@@ -651,7 +693,7 @@ const _DashPdf = (props) => {
 _DashPdf.defaultProps = {
     enableAnnotations: false,
     annotations: [],
-    selectedAnnotationTool: 'comment',
+    selectedAnnotationTool: 'none',
     scale: 1.0,
     pageNumber: 1,
 };
@@ -670,6 +712,7 @@ _DashPdf.propTypes = {
     enableAnnotations: PropTypes.bool,
     annotations: PropTypes.arrayOf(PropTypes.object),
     selectedAnnotationTool: PropTypes.oneOf([
+        'none',
         'comment',
         'rectangle',
         'text',
