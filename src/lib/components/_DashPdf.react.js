@@ -13,17 +13,11 @@ const MIN_DRAG_DISTANCE = 10;
 
 // Annotation rendering configurations
 const ANNOTATION_STYLES = {
-    comment: {
-        size: 24,
-        backgroundColor: '#fbbf24',
-        border: '2px solid #f59e0b',
-        icon: '💬',
-    },
     rectangle: {
         border: '2px solid #dc2626',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
     },
-    text: {
+    comment: {
         backgroundColor: '#dbeafe',
         border: '1px solid #3b82f6',
     },
@@ -231,17 +225,14 @@ const _DashPdf = (props) => {
         };
     }, [isAnnotationToolActive, selectedAnnotationTool, handleTextSelection]);
 
-    // Drawing handlers for rectangle and text tools
+    // Drawing handlers for rectangle and comment tools
     const handleMouseDown = useCallback(
         (e) => {
             if (
                 !isAnnotationToolActive ||
                 selectedAnnotationTool === 'highlight' ||
-                selectedAnnotationTool === 'comment' ||
                 selectedAnnotationTool === 'none' ||
-                e.target.closest(
-                    '.annotation-comment, .annotation-rectangle, .annotation-text'
-                )
+                e.target.closest('.annotation-comment, .annotation-rectangle')
             ) {
                 return;
             }
@@ -255,8 +246,10 @@ const _DashPdf = (props) => {
                 y,
                 width: 0,
                 height: 0,
-                text: selectedAnnotationTool === 'text' ? 'Edit this text' : '',
-                comment: '',
+                text:
+                    selectedAnnotationTool === 'comment'
+                        ? 'Edit this text'
+                        : '',
             });
 
             setCurrentAnnotation(newAnnotation);
@@ -326,40 +319,6 @@ const _DashPdf = (props) => {
         addAnnotation,
     ]);
 
-    // Comment annotation handler
-    const addCommentAnnotation = useCallback(
-        (e) => {
-            if (
-                !isAnnotationToolActive ||
-                selectedAnnotationTool !== 'comment' ||
-                e.target.closest(
-                    '.annotation-comment, .annotation-rectangle, .annotation-text, .annotation-highlight'
-                )
-            ) {
-                return;
-            }
-
-            const {x, y} = getRelativePosition(e);
-            const commentAnnotation = createAnnotation({
-                type: 'comment',
-                x,
-                y,
-                width: 20,
-                height: 20,
-                comment: 'New comment',
-            });
-
-            addAnnotation(commentAnnotation);
-        },
-        [
-            isAnnotationToolActive,
-            selectedAnnotationTool,
-            getRelativePosition,
-            createAnnotation,
-            addAnnotation,
-        ]
-    );
-
     // Get appropriate mouse handlers based on selected tool
     const getMouseHandlers = useCallback(() => {
         if (!isAnnotationToolActive || selectedAnnotationTool === 'none') {
@@ -369,8 +328,6 @@ const _DashPdf = (props) => {
         switch (selectedAnnotationTool) {
             case 'highlight':
                 return {};
-            case 'comment':
-                return {onClick: addCommentAnnotation};
             default:
                 return {
                     onMouseDown: handleMouseDown,
@@ -381,7 +338,6 @@ const _DashPdf = (props) => {
     }, [
         isAnnotationToolActive,
         selectedAnnotationTool,
-        addCommentAnnotation,
         handleMouseDown,
         handleMouseMove,
         handleMouseUp,
@@ -422,37 +378,6 @@ const _DashPdf = (props) => {
             };
 
             switch (annotation.type) {
-                case 'comment':
-                    return (
-                        <div
-                            {...commonProps}
-                            style={{
-                                ...commonProps.style,
-                                left: annotation.x - 12,
-                                top: annotation.y - 12,
-                                width: `${ANNOTATION_STYLES.comment.size}px`,
-                                height: `${ANNOTATION_STYLES.comment.size}px`,
-                                backgroundColor:
-                                    ANNOTATION_STYLES.comment.backgroundColor,
-                                border: ANNOTATION_STYLES.comment.border,
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor:
-                                    selectedAnnotationTool === 'none'
-                                        ? 'default'
-                                        : 'pointer',
-                                fontSize: '12px',
-                                zIndex: 10,
-                            }}
-                            title={annotation.comment}
-                        >
-                            {ANNOTATION_STYLES.comment.icon}
-                            <DeleteButton annotationId={annotation.id} />
-                        </div>
-                    );
-
                 case 'rectangle':
                     return (
                         <div
@@ -478,7 +403,7 @@ const _DashPdf = (props) => {
                         </div>
                     );
 
-                case 'text':
+                case 'comment':
                     return (
                         <div
                             {...commonProps}
@@ -502,8 +427,9 @@ const _DashPdf = (props) => {
                                 disabled={selectedAnnotationTool === 'none'}
                                 style={{
                                     backgroundColor:
-                                        ANNOTATION_STYLES.text.backgroundColor,
-                                    border: ANNOTATION_STYLES.text.border,
+                                        ANNOTATION_STYLES.comment
+                                            .backgroundColor,
+                                    border: ANNOTATION_STYLES.comment.border,
                                     padding: '4px 8px',
                                     fontSize: '14px',
                                     borderRadius: '4px',
@@ -715,7 +641,6 @@ _DashPdf.propTypes = {
         'none',
         'comment',
         'rectangle',
-        'text',
         'highlight',
     ]),
     onAnnotationAdd: PropTypes.func,
