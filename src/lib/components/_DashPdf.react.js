@@ -322,6 +322,10 @@ const _DashPdf = ({
     onAnnotationUpdate = null,
     pageNumber = 1,
     enablePan = true,
+    enableZoom = true,
+    minScale = 0.5,
+    maxScale = 3.0,
+    zoomStep = 0.1,
     setProps,
 }) => {
     // const  = props;
@@ -432,6 +436,28 @@ const _DashPdf = ({
     const handlePanEnd = useCallback(() => {
         setIsPanning(false);
     }, []);
+
+    // Zoom handler
+    const handleWheel = useCallback(
+        (e) => {
+            if (!enableZoom) {
+                return;
+            }
+
+            e.preventDefault();
+
+            const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+            const newScale = Math.max(
+                minScale,
+                Math.min(maxScale, scale + delta)
+            );
+
+            if (newScale !== scale) {
+                updateProps({scale: newScale});
+            }
+        },
+        [enableZoom, scale, zoomStep, minScale, maxScale, updateProps]
+    );
 
     const callCallback = useCallback((callback, ...args) => {
         if (callback && typeof callback === 'function') {
@@ -739,6 +765,7 @@ const _DashPdf = ({
                                 ? 'none'
                                 : 'transform 0.1s ease-out',
                         }}
+                        onWheel={handleWheel}
                         {...mouseHandlers}
                     >
                         <Document
@@ -831,6 +858,18 @@ _DashPdf.propTypes = {
 
     /** Whether pan functionality is enabled (default: true) */
     enablePan: PropTypes.bool,
+
+    /** Whether zoom functionality is enabled (default: true) */
+    enableZoom: PropTypes.bool,
+
+    /** Minimum scale factor for zooming (default: 0.5) */
+    minScale: PropTypes.number,
+
+    /** Maximum scale factor for zooming (default: 3.0) */
+    maxScale: PropTypes.number,
+
+    /** Step size for zoom increments (default: 0.1) */
+    zoomStep: PropTypes.number,
 };
 
 export default _DashPdf;
