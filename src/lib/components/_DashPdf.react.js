@@ -597,6 +597,22 @@ const _DashPdf = ({
             }
 
             const {x, y} = getRelativePosition(e);
+
+            // Handle comment tool with single click
+            if (selectedAnnotationTool === 'comment') {
+                const commentAnnotation = createAnnotation({
+                    type: 'comment',
+                    x,
+                    y,
+                    width: 0,
+                    height: 0,
+                    comment: 'Edit this text',
+                });
+                addAnnotation(commentAnnotation);
+                return;
+            }
+
+            // Handle rectangle tool with drag
             setIsDrawing(true);
 
             const newAnnotation = createAnnotation({
@@ -618,6 +634,7 @@ const _DashPdf = ({
             selectedAnnotationTool,
             getRelativePosition,
             createAnnotation,
+            addAnnotation,
         ]
     );
 
@@ -628,6 +645,7 @@ const _DashPdf = ({
                 !currentAnnotation ||
                 selectedAnnotationTool === 'highlight' ||
                 selectedAnnotationTool === 'none' ||
+                selectedAnnotationTool === 'comment' ||
                 isTextSelecting
             ) {
                 return;
@@ -653,6 +671,7 @@ const _DashPdf = ({
         if (
             selectedAnnotationTool === 'highlight' ||
             selectedAnnotationTool === 'none' ||
+            selectedAnnotationTool === 'comment' ||
             isTextSelecting
         ) {
             return;
@@ -797,7 +816,8 @@ const _DashPdf = ({
                         {isAnnotationToolActive &&
                             currentAnnotation &&
                             selectedAnnotationTool !== 'highlight' &&
-                            selectedAnnotationTool !== 'none' && (
+                            selectedAnnotationTool !== 'none' &&
+                            selectedAnnotationTool !== 'comment' && (
                                 <DrawingPreview
                                     currentAnnotation={currentAnnotation}
                                     scale={scale}
