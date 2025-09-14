@@ -92,8 +92,14 @@ const RectangleAnnotation = ({
             className="annotation-rectangle"
             style={{
                 position: 'absolute',
-                left: Math.min(annotation.x * scale, (annotation.x + annotation.width) * scale),
-                top: Math.min(annotation.y * scale, (annotation.y + annotation.height) * scale),
+                left: Math.min(
+                    annotation.x * scale,
+                    (annotation.x + annotation.width) * scale
+                ),
+                top: Math.min(
+                    annotation.y * scale,
+                    (annotation.y + annotation.height) * scale
+                ),
                 width: Math.abs(annotation.width * scale),
                 height: Math.abs(annotation.height * scale),
                 border: ANNOTATION_STYLES.rectangle.border,
@@ -356,13 +362,16 @@ const _DashPdf = ({
         [pageNumber]
     );
 
-    const getRelativePosition = useCallback((e) => {
-        const rect = containerRef.current.getBoundingClientRect();
-        return {
-            x: (e.clientX - rect.left) / scale,
-            y: (e.clientY - rect.top) / scale,
-        };
-    }, [scale]);
+    const getRelativePosition = useCallback(
+        (e) => {
+            const rect = containerRef.current.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) / scale,
+                y: (e.clientY - rect.top) / scale,
+            };
+        },
+        [scale]
+    );
 
     const callCallback = useCallback((callback, ...args) => {
         if (callback && typeof callback === 'function') {
