@@ -118,6 +118,26 @@ app.layout = html.Div(
                                         ],
                                         className="mb-3",
                                     ),
+                                    # Scaling
+                                    dbc.ButtonGroup(
+                                        [
+                                            dbc.Button(
+                                                "➖",
+                                                id="zoom-out-button",
+                                                color="info",
+                                                outline=True,
+                                                className="fw-medium",
+                                            ),
+                                            dbc.Button(
+                                                "➕",
+                                                id="zoom-in-button",
+                                                color="info",
+                                                outline=True,
+                                                className="fw-medium",
+                                            ),
+                                        ],
+                                        className="mb-3 ms-3",
+                                    ),
                                     html.P(
                                         id="tool-instructions",
                                         className="small text-muted fst-italic",
@@ -315,5 +335,26 @@ def change_page(prev_clicks, next_clicks, current_page, num_pages):
     return current_page
 
 
+@app.callback(
+    Output("pdf-viewer", "scale"),
+    Input("zoom-in-button", "n_clicks"),
+    Input("zoom-out-button", "n_clicks"),
+    State("pdf-viewer", "scale"),
+    prevent_initial_call=True,
+)
+def change_scale(zoom_in_clicks, zoom_out_clicks, current_scale):
+    ctx = dash.callback_context
+    if not current_scale:
+        current_scale = 1.0
+    if not ctx.triggered:
+        return current_scale
+    button_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    if button_id == "zoom-in-button":
+        return current_scale + 0.1
+    elif button_id == "zoom-out-button" and current_scale > 0.2:
+        return current_scale - 0.1
+    return current_scale
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(port=8060, debug=True)
