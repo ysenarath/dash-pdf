@@ -136,3 +136,27 @@
 .pdf-container.pan-enabled .react-pdf__Page__textContent {
     pointer-events: none;
 }
+
+/* Resize handle styles */
+.resize-handle {
+    border-radius: 2px;
+    transition: all 0.2s ease;
+}
+
+.resize-handle:hover {
+    background-color: #2563eb !important;
+    transform: scale(1.2);
+}
+
+.annotation-rectangle:hover .resize-handle {
+    opacity: 1;
+}
+
+.annotation-rectangle .resize-handle {
+    opacity: 0.8;
+}
+
+/* Hide resize handles when annotation tool is disabled */
+.annotation-rectangle .resize-handle {
+    display: block;
+}

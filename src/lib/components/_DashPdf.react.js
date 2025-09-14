@@ -18,6 +18,7 @@ const DELETE_BUTTON_OFFSET_X = 8;
 const DELETE_BUTTON_OFFSET_Y = 8;
 const COMMENT_FONT_SIZE = 14;
 const COMMENT_MIN_WIDTH = 80;
+const MIN_RESIZE_SIZE = 20;
 
 // Annotation rendering configurations
 const ANNOTATION_STYLES = {
@@ -89,8 +90,11 @@ const RectangleAnnotation = ({
     scale = 1.0,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const [resizeHandle, setResizeHandle] = useState(null);
     const [dragStart, setDragStart] = useState({x: 0, y: 0});
     const [initialPosition, setInitialPosition] = useState({x: 0, y: 0});
+    const [initialSize, setInitialSize] = useState({width: 0, height: 0});
 
     // Text extraction utility for rectangles
     const extractTextFromRectangle = useCallback(
@@ -156,36 +160,122 @@ const RectangleAnnotation = ({
         setInitialPosition({x: annotation.x, y: annotation.y});
     };
 
+    const handleResizeStart = (e, handle) => {
+        if (selectedAnnotationTool === 'none') {
+            return;
+        }
+
+        e.stopPropagation();
+        setIsResizing(true);
+        setResizeHandle(handle);
+        setDragStart({x: e.clientX, y: e.clientY});
+        setInitialPosition({x: annotation.x, y: annotation.y});
+        setInitialSize({width: annotation.width, height: annotation.height});
+    };
+
     const handleMouseMove = useCallback(
         (e) => {
-            if (!isDragging) {
+            if (!isDragging && !isResizing) {
                 return;
             }
 
             const deltaX = (e.clientX - dragStart.x) / scale;
             const deltaY = (e.clientY - dragStart.y) / scale;
 
-            const newX = initialPosition.x + deltaX;
-            const newY = initialPosition.y + deltaY;
+            if (isDragging) {
+                const newX = initialPosition.x + deltaX;
+                const newY = initialPosition.y + deltaY;
 
-            // Extract text at the new position
-            const extractedText = extractTextFromRectangle(
-                newX,
-                newY,
-                annotation.width,
-                annotation.height
-            );
+                // Extract text at the new position
+                const extractedText = extractTextFromRectangle(
+                    newX,
+                    newY,
+                    annotation.width,
+                    annotation.height
+                );
 
-            onUpdate(annotation.id, {
-                x: newX,
-                y: newY,
-                selected_text: extractedText,
-            });
+                onUpdate(annotation.id, {
+                    x: newX,
+                    y: newY,
+                    selected_text: extractedText,
+                });
+            } else if (isResizing) {
+                // Calculate current normalized bounds
+                const currentLeft = Math.min(initialPosition.x, initialPosition.x + initialSize.width);
+                const currentTop = Math.min(initialPosition.y, initialPosition.y + initialSize.height);
+                const currentRight = Math.max(initialPosition.x, initialPosition.x + initialSize.width);
+                const currentBottom = Math.max(initialPosition.y, initialPosition.y + initialSize.height);
+
+                let newLeft = currentLeft;
+                let newTop = currentTop;
+                let newRight = currentRight;
+                let newBottom = currentBottom;
+
+                switch (resizeHandle) {
+                    case 'nw':
+                        newLeft = currentLeft + deltaX;
+                        newTop = currentTop + deltaY;
+                        break;
+                    case 'ne':
+                        newRight = currentRight + deltaX;
+                        newTop = currentTop + deltaY;
+                        break;
+                    case 'sw':
+                        newLeft = currentLeft + deltaX;
+                        newBottom = currentBottom + deltaY;
+                        break;
+                    case 'se':
+                        newRight = currentRight + deltaX;
+                        newBottom = currentBottom + deltaY;
+                        break;
+                    case 'n':
+                        newTop = currentTop + deltaY;
+                        break;
+                    case 's':
+                        newBottom = currentBottom + deltaY;
+                        break;
+                    case 'w':
+                        newLeft = currentLeft + deltaX;
+                        break;
+                    case 'e':
+                        newRight = currentRight + deltaX;
+                        break;
+                    default:
+                        break;
+                }
+
+                // Calculate new dimensions
+                const newWidth = newRight - newLeft;
+                const newHeight = newBottom - newTop;
+
+                // Ensure minimum size
+                const minSize = MIN_RESIZE_SIZE / scale;
+                if (Math.abs(newWidth) >= minSize && Math.abs(newHeight) >= minSize) {
+                    // Extract text from the new rectangle area
+                    const extractedText = extractTextFromRectangle(
+                        newLeft,
+                        newTop,
+                        newWidth,
+                        newHeight
+                    );
+
+                    onUpdate(annotation.id, {
+                        x: newLeft,
+                        y: newTop,
+                        width: newWidth,
+                        height: newHeight,
+                        selected_text: extractedText,
+                    });
+                }
+            }
         },
         [
             isDragging,
+            isResizing,
             dragStart,
             initialPosition,
+            initialSize,
+            resizeHandle,
             scale,
             annotation.id,
             annotation.width,
@@ -197,10 +287,12 @@ const RectangleAnnotation = ({
 
     const handleMouseUp = useCallback(() => {
         setIsDragging(false);
+        setIsResizing(false);
+        setResizeHandle(null);
     }, []);
 
     useEffect(() => {
-        if (isDragging) {
+        if (isDragging || isResizing) {
             document.addEventListener('mousemove', handleMouseMove);
             document.addEventListener('mouseup', handleMouseUp);
             return () => {
@@ -209,23 +301,23 @@ const RectangleAnnotation = ({
             };
         }
         return () => {};
-    }, [isDragging, handleMouseMove, handleMouseUp]);
+    }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
+
+    // Calculate normalized rectangle bounds for proper positioning
+    const rectLeft = Math.min(annotation.x, annotation.x + annotation.width);
+    const rectTop = Math.min(annotation.y, annotation.y + annotation.height);
+    const rectWidth = Math.abs(annotation.width);
+    const rectHeight = Math.abs(annotation.height);
 
     return (
         <div
             className="annotation-rectangle"
             style={{
                 position: 'absolute',
-                left: Math.min(
-                    annotation.x * scale,
-                    (annotation.x + annotation.width) * scale
-                ),
-                top: Math.min(
-                    annotation.y * scale,
-                    (annotation.y + annotation.height) * scale
-                ),
-                width: Math.abs(annotation.width * scale),
-                height: Math.abs(annotation.height * scale),
+                left: rectLeft * scale,
+                top: rectTop * scale,
+                width: rectWidth * scale,
+                height: rectHeight * scale,
                 border: ANNOTATION_STYLES.rectangle.border,
                 backgroundColor: ANNOTATION_STYLES.rectangle.backgroundColor,
                 zIndex: 5,
@@ -233,6 +325,8 @@ const RectangleAnnotation = ({
                     selectedAnnotationTool !== 'none'
                         ? isDragging
                             ? 'grabbing'
+                            : isResizing
+                            ? 'nwse-resize'
                             : 'grab'
                         : 'default',
             }}
@@ -247,7 +341,145 @@ const RectangleAnnotation = ({
                 annotationId={annotation.id}
                 onDelete={onDelete}
                 selectedAnnotationTool={selectedAnnotationTool}
+                style={{
+                    top: '-8px',
+                    right: '-8px',
+                    zIndex: 15, // Higher than resize handles
+                }}
             />
+            
+            {/* Resize handles - only show when annotation tool is active */}
+            {selectedAnnotationTool !== 'none' && (
+                <>
+                    {/* Corner handles */}
+                    <div
+                        className="resize-handle resize-handle-nw"
+                        style={{
+                            position: 'absolute',
+                            top: '-4px',
+                            left: '-4px',
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: '#3b82f6',
+                            border: '1px solid white',
+                            cursor: 'nw-resize',
+                            zIndex: 10,
+                        }}
+                        onMouseDown={(e) => handleResizeStart(e, 'nw')}
+                    />
+                    <div
+                        className="resize-handle resize-handle-ne"
+                        style={{
+                            position: 'absolute',
+                            top: '-4px',
+                            right: '-4px',
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: '#3b82f6',
+                            border: '1px solid white',
+                            cursor: 'ne-resize',
+                            zIndex: 10,
+                        }}
+                        onMouseDown={(e) => handleResizeStart(e, 'ne')}
+                    />
+                    <div
+                        className="resize-handle resize-handle-sw"
+                        style={{
+                            position: 'absolute',
+                            bottom: '-4px',
+                            left: '-4px',
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: '#3b82f6',
+                            border: '1px solid white',
+                            cursor: 'sw-resize',
+                            zIndex: 10,
+                        }}
+                        onMouseDown={(e) => handleResizeStart(e, 'sw')}
+                    />
+                    <div
+                        className="resize-handle resize-handle-se"
+                        style={{
+                            position: 'absolute',
+                            bottom: '-4px',
+                            right: '-4px',
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: '#3b82f6',
+                            border: '1px solid white',
+                            cursor: 'se-resize',
+                            zIndex: 10,
+                        }}
+                        onMouseDown={(e) => handleResizeStart(e, 'se')}
+                    />
+                    
+                    {/* Edge handles */}
+                    <div
+                        className="resize-handle resize-handle-n"
+                        style={{
+                            position: 'absolute',
+                            top: '-4px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: '#3b82f6',
+                            border: '1px solid white',
+                            cursor: 'n-resize',
+                            zIndex: 10,
+                        }}
+                        onMouseDown={(e) => handleResizeStart(e, 'n')}
+                    />
+                    <div
+                        className="resize-handle resize-handle-s"
+                        style={{
+                            position: 'absolute',
+                            bottom: '-4px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: '#3b82f6',
+                            border: '1px solid white',
+                            cursor: 's-resize',
+                            zIndex: 10,
+                        }}
+                        onMouseDown={(e) => handleResizeStart(e, 's')}
+                    />
+                    <div
+                        className="resize-handle resize-handle-w"
+                        style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '-4px',
+                            transform: 'translateY(-50%)',
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: '#3b82f6',
+                            border: '1px solid white',
+                            cursor: 'w-resize',
+                            zIndex: 10,
+                        }}
+                        onMouseDown={(e) => handleResizeStart(e, 'w')}
+                    />
+                    <div
+                        className="resize-handle resize-handle-e"
+                        style={{
+                            position: 'absolute',
+                            top: '50%',
+                            right: '-4px',
+                            transform: 'translateY(-50%)',
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: '#3b82f6',
+                            border: '1px solid white',
+                            cursor: 'e-resize',
+                            zIndex: 10,
+                        }}
+                        onMouseDown={(e) => handleResizeStart(e, 'e')}
+                    />
+                </>
+            )}
         </div>
     );
 };
@@ -444,21 +676,21 @@ const DrawingPreview = ({currentAnnotation, scale = 1.0}) => {
 
     const isValidDrag = dragDistance >= MIN_DRAG_DISTANCE;
 
+    // Calculate normalized bounds for proper positioning
+    const previewLeft = Math.min(currentAnnotation.x, currentAnnotation.x + currentAnnotation.width);
+    const previewTop = Math.min(currentAnnotation.y, currentAnnotation.y + currentAnnotation.height);
+    const previewWidth = Math.abs(currentAnnotation.width);
+    const previewHeight = Math.abs(currentAnnotation.height);
+
     return (
         <div
             className="annotation-drawing"
             style={{
                 position: 'absolute',
-                left: Math.min(
-                    currentAnnotation.x * scale,
-                    (currentAnnotation.x + currentAnnotation.width) * scale
-                ),
-                top: Math.min(
-                    currentAnnotation.y * scale,
-                    (currentAnnotation.y + currentAnnotation.height) * scale
-                ),
-                width: Math.abs(currentAnnotation.width * scale),
-                height: Math.abs(currentAnnotation.height * scale),
+                left: previewLeft * scale,
+                top: previewTop * scale,
+                width: previewWidth * scale,
+                height: previewHeight * scale,
                 border: '2px dashed',
                 backgroundColor: 'rgba(156, 163, 175, 0.1)',
                 pointerEvents: 'none',
