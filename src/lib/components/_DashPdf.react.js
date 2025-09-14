@@ -92,8 +92,63 @@ const RectangleAnnotation = ({
     const [dragStart, setDragStart] = useState({x: 0, y: 0});
     const [initialPosition, setInitialPosition] = useState({x: 0, y: 0});
 
+    // Text extraction utility for rectangles
+    const extractTextFromRectangle = useCallback(
+        (x, y, width, height) => {
+            try {
+                const container = document.querySelector('.pdf-container');
+                const textLayer = container?.querySelector(
+                    '.react-pdf__Page__textContent'
+                );
+                if (!textLayer) {
+                    return '';
+                }
+
+                const textElements = textLayer.querySelectorAll('span');
+                const extractedTexts = [];
+
+                // Convert rectangle coordinates to absolute positions
+                const rectLeft = Math.min(x, x + width) * scale;
+                const rectTop = Math.min(y, y + height) * scale;
+                const rectRight = Math.max(x, x + width) * scale;
+                const rectBottom = Math.max(y, y + height) * scale;
+
+                textElements.forEach((span) => {
+                    const rect = span.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+
+                    // Convert to relative coordinates
+                    const spanLeft = rect.left - containerRect.left;
+                    const spanTop = rect.top - containerRect.top;
+                    const spanRight = rect.right - containerRect.left;
+                    const spanBottom = rect.bottom - containerRect.top;
+
+                    // Check if text element overlaps with rectangle
+                    const overlaps = !(
+                        spanRight < rectLeft ||
+                        spanLeft > rectRight ||
+                        spanBottom < rectTop ||
+                        spanTop > rectBottom
+                    );
+
+                    if (overlaps && span.textContent.trim()) {
+                        extractedTexts.push(span.textContent.trim());
+                    }
+                });
+
+                return extractedTexts.join(' ').trim();
+            } catch (error) {
+                console.warn('Error extracting text from rectangle:', error);
+                return '';
+            }
+        },
+        [scale]
+    );
+
     const handleMouseDown = (e) => {
-        if (selectedAnnotationTool === 'none') return;
+        if (selectedAnnotationTool === 'none') {
+            return;
+        }
 
         e.stopPropagation();
         setIsDragging(true);
@@ -110,12 +165,34 @@ const RectangleAnnotation = ({
             const deltaX = (e.clientX - dragStart.x) / scale;
             const deltaY = (e.clientY - dragStart.y) / scale;
 
+            const newX = initialPosition.x + deltaX;
+            const newY = initialPosition.y + deltaY;
+
+            // Extract text at the new position
+            const extractedText = extractTextFromRectangle(
+                newX,
+                newY,
+                annotation.width,
+                annotation.height
+            );
+
             onUpdate(annotation.id, {
-                x: initialPosition.x + deltaX,
-                y: initialPosition.y + deltaY,
+                x: newX,
+                y: newY,
+                selected_text: extractedText,
             });
         },
-        [isDragging, dragStart, initialPosition, scale, annotation.id, onUpdate]
+        [
+            isDragging,
+            dragStart,
+            initialPosition,
+            scale,
+            annotation.id,
+            annotation.width,
+            annotation.height,
+            onUpdate,
+            extractTextFromRectangle,
+        ]
     );
 
     const handleMouseUp = useCallback(() => {
@@ -160,6 +237,11 @@ const RectangleAnnotation = ({
                         : 'default',
             }}
             onMouseDown={handleMouseDown}
+            title={
+                annotation.selected_text
+                    ? `"${annotation.selected_text}"`
+                    : 'Rectangle annotation'
+            }
         >
             <DeleteButton
                 annotationId={annotation.id}
@@ -435,6 +517,7 @@ const _DashPdf = ({
     enableZoom = true,
     minScale = 0.5,
     maxScale = 3.0,
+    // eslint-disable-next-line no-magic-numbers
     zoomStep = 0.1,
     setProps,
 }) => {
@@ -481,8 +564,11 @@ const _DashPdf = ({
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
             /[xy]/g,
             function (c) {
+                // eslint-disable-next-line no-magic-numbers
                 const r = (Math.random() * 16) | 0;
+                // eslint-disable-next-line no-magic-numbers
                 const v = c === 'x' ? r : (r & 0x3) | 0x8;
+                // eslint-disable-next-line no-magic-numbers
                 return v.toString(16);
             }
         );
@@ -725,6 +811,59 @@ const _DashPdf = ({
         ]
     );
 
+    // Text extraction utility for rectangles
+    const extractTextFromRectangle = useCallback(
+        (x, y, width, height) => {
+            try {
+                const textLayer = containerRef.current?.querySelector(
+                    '.react-pdf__Page__textContent'
+                );
+                if (!textLayer) {
+                    return '';
+                }
+
+                const textElements = textLayer.querySelectorAll('span');
+                const extractedTexts = [];
+
+                // Convert rectangle coordinates to absolute positions
+                const rectLeft = Math.min(x, x + width) * scale;
+                const rectTop = Math.min(y, y + height) * scale;
+                const rectRight = Math.max(x, x + width) * scale;
+                const rectBottom = Math.max(y, y + height) * scale;
+
+                textElements.forEach((span) => {
+                    const rect = span.getBoundingClientRect();
+                    const containerRect =
+                        containerRef.current.getBoundingClientRect();
+
+                    // Convert to relative coordinates
+                    const spanLeft = rect.left - containerRect.left;
+                    const spanTop = rect.top - containerRect.top;
+                    const spanRight = rect.right - containerRect.left;
+                    const spanBottom = rect.bottom - containerRect.top;
+
+                    // Check if text element overlaps with rectangle
+                    const overlaps = !(
+                        spanRight < rectLeft ||
+                        spanLeft > rectRight ||
+                        spanBottom < rectTop ||
+                        spanTop > rectBottom
+                    );
+
+                    if (overlaps && span.textContent.trim()) {
+                        extractedTexts.push(span.textContent.trim());
+                    }
+                });
+
+                return extractedTexts.join(' ').trim();
+            } catch (error) {
+                console.warn('Error extracting text from rectangle:', error);
+                return '';
+            }
+        },
+        [scale]
+    );
+
     // Drawing handlers for rectangle tool
     const handleMouseDown = useCallback(
         (e) => {
@@ -807,7 +946,22 @@ const _DashPdf = ({
             );
 
             if (draggedDistance >= MIN_DRAG_DISTANCE) {
-                addAnnotation(currentAnnotation);
+                // Extract text from the rectangle area for rectangle annotations
+                let annotationWithText = currentAnnotation;
+                if (selectedAnnotationTool === 'rectangle') {
+                    const extractedText = extractTextFromRectangle(
+                        currentAnnotation.x,
+                        currentAnnotation.y,
+                        currentAnnotation.width,
+                        currentAnnotation.height
+                    );
+                    annotationWithText = {
+                        ...currentAnnotation,
+                        selected_text: extractedText,
+                    };
+                }
+
+                addAnnotation(annotationWithText);
             }
 
             setCurrentAnnotation(null);
@@ -819,6 +973,7 @@ const _DashPdf = ({
         selectedAnnotationTool,
         isTextSelecting,
         addAnnotation,
+        extractTextFromRectangle,
     ]);
 
     // Get appropriate mouse handlers based on selected tool and pan state
