@@ -119,12 +119,12 @@ npm run build
 uv build
 
 # Test the artifact
-uv pip install dash dist/dash_pdf_plus-0.0.1.tar.gz
+uv pip install dash dist/dash_pdf_plus-0.0.2.tar.gz
 uv run demo/app.py
 
 # Upload to PyPI
-uv pip install twine
-twine upload dist/*
+# uv pip install twine
+# twine upload dist/*
 
 # Or with UV
 uv publish
