@@ -303,7 +303,7 @@ const RectangleAnnotation = ({
         return () => {};
     }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
 
-    // Calculate normalized rectangle bounds for proper positioning
+            // Calculate normalized rectangle bounds for proper positioning
     const rectLeft = Math.min(annotation.x, annotation.x + annotation.width);
     const rectTop = Math.min(annotation.y, annotation.y + annotation.height);
     const rectWidth = Math.abs(annotation.width);
@@ -809,7 +809,9 @@ const _DashPdf = ({
     const createAnnotation = useCallback(
         (baseProps) => ({
             id: `${baseProps.type}-${generateUUID()}`,
-            timestamp: new Date().toISOString(),
+            version: 1,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
             page: pageNumber,
             ...baseProps,
         }),
@@ -924,11 +926,16 @@ const _DashPdf = ({
 
     const updateAnnotation = useCallback(
         (annotationId, updates) => {
+            const updatesWithVersionAndTimestamp = {
+                ...updates,
+                version: (annotations.find(ann => ann.id === annotationId)?.version || 1) + 1,
+                updated_at: new Date().toISOString(),
+            };
             const newAnnotations = annotations.map((ann) =>
-                ann.id === annotationId ? {...ann, ...updates} : ann
+                ann.id === annotationId ? {...ann, ...updatesWithVersionAndTimestamp} : ann
             );
             updateAnnotations(newAnnotations);
-            callCallback(onAnnotationUpdate, annotationId, updates);
+            callCallback(onAnnotationUpdate, annotationId, updatesWithVersionAndTimestamp);
         },
         [annotations, updateAnnotations, onAnnotationUpdate, callCallback]
     );
