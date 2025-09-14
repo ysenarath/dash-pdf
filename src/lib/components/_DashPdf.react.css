@@ -119,3 +119,20 @@
 .annotation-highlight:hover {
     opacity: 0.6 !important;
 }
+
+/* Pan functionality styles */
+.pdf-container.pan-enabled {
+    cursor: grab;
+}
+
+.pdf-container.pan-enabled:active {
+    cursor: grabbing;
+}
+
+.pdf-container.pan-enabled .react-pdf__Page {
+    pointer-events: none;
+}
+
+.pdf-container.pan-enabled .react-pdf__Page__textContent {
+    pointer-events: none;
+}
