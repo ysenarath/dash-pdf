@@ -143,11 +143,11 @@ const CommentAnnotation = ({
         >
             <input
                 type="text"
-                value={annotation.text}
+                value={annotation.comment}
                 onChange={(e) =>
                     selectedAnnotationTool !== 'none' &&
                     onUpdate(annotation.id, {
-                        text: e.target.value,
+                        comment: e.target.value,
                     })
                 }
                 onClick={(e) => e.stopPropagation()}
@@ -210,8 +210,8 @@ const HighlightAnnotation = ({
                     zIndex: 1,
                 }}
                 title={
-                    annotation.text
-                        ? `"${annotation.text}"`
+                    annotation.selected_text
+                        ? `"${annotation.selected_text}"`
                         : 'Highlighted text'
                 }
             />
@@ -451,7 +451,7 @@ const _DashPdf = ({
                 y,
                 width,
                 height,
-                text: selectedText,
+                selected_text: selectedText,
                 color: ANNOTATION_STYLES.highlight.defaultColor,
                 opacity: DEFAULT_OPACITY,
             });
@@ -519,7 +519,7 @@ const _DashPdf = ({
                 y,
                 width: 0,
                 height: 0,
-                text:
+                comment:
                     selectedAnnotationTool === 'comment'
                         ? 'Edit this text'
                         : '',

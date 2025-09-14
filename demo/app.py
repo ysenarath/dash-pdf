@@ -1,4 +1,5 @@
 import base64
+import json
 
 import dash
 import requests
@@ -306,7 +307,7 @@ def handle_annotation_changes(annotations):
         print(f"Annotations updated: {len(annotations)} total annotations")
         for i, annotation in enumerate(annotations):
             print(
-                f"  {i + 1}. {annotation.get('type', 'unknown')} on page {annotation.get('page', '?')}"
+                json.dumps(annotation, indent=2),
             )
     else:
         print("No annotations")
