@@ -584,33 +584,51 @@ const _DashPdf = ({
         };
     }, [isAnnotationToolActive, selectedAnnotationTool, handleTextSelection]);
 
-    // Drawing handlers for rectangle and comment tools
-    const handleMouseDown = useCallback(
+    // Double-click handler for comment tool
+    const handleDoubleClick = useCallback(
         (e) => {
             if (
                 !isAnnotationToolActive ||
-                selectedAnnotationTool === 'highlight' ||
-                selectedAnnotationTool === 'none' ||
+                selectedAnnotationTool !== 'comment' ||
                 e.target.closest('.annotation-comment, .annotation-rectangle')
             ) {
                 return;
             }
 
             const {x, y} = getRelativePosition(e);
+            const commentAnnotation = createAnnotation({
+                type: 'comment',
+                x,
+                y,
+                width: 0,
+                height: 0,
+                comment: 'Edit this text',
+            });
+            addAnnotation(commentAnnotation);
+        },
+        [
+            isAnnotationToolActive,
+            selectedAnnotationTool,
+            getRelativePosition,
+            createAnnotation,
+            addAnnotation,
+        ]
+    );
 
-            // Handle comment tool with single click
-            if (selectedAnnotationTool === 'comment') {
-                const commentAnnotation = createAnnotation({
-                    type: 'comment',
-                    x,
-                    y,
-                    width: 0,
-                    height: 0,
-                    comment: 'Edit this text',
-                });
-                addAnnotation(commentAnnotation);
+    // Drawing handlers for rectangle tool
+    const handleMouseDown = useCallback(
+        (e) => {
+            if (
+                !isAnnotationToolActive ||
+                selectedAnnotationTool === 'highlight' ||
+                selectedAnnotationTool === 'none' ||
+                selectedAnnotationTool === 'comment' ||
+                e.target.closest('.annotation-comment, .annotation-rectangle')
+            ) {
                 return;
             }
+
+            const {x, y} = getRelativePosition(e);
 
             // Handle rectangle tool with drag
             setIsDrawing(true);
@@ -621,10 +639,6 @@ const _DashPdf = ({
                 y,
                 width: 0,
                 height: 0,
-                comment:
-                    selectedAnnotationTool === 'comment'
-                        ? 'Edit this text'
-                        : '',
             });
 
             setCurrentAnnotation(newAnnotation);
@@ -634,7 +648,6 @@ const _DashPdf = ({
             selectedAnnotationTool,
             getRelativePosition,
             createAnnotation,
-            addAnnotation,
         ]
     );
 
@@ -715,6 +728,10 @@ const _DashPdf = ({
             switch (selectedAnnotationTool) {
                 case 'highlight':
                     return {};
+                case 'comment':
+                    return {
+                        onDoubleClick: handleDoubleClick,
+                    };
                 default:
                     return {
                         onMouseDown: handleMouseDown,
@@ -732,6 +749,7 @@ const _DashPdf = ({
         handlePanStart,
         handlePanMove,
         handlePanEnd,
+        handleDoubleClick,
         handleMouseDown,
         handleMouseMove,
         handleMouseUp,

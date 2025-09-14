@@ -268,7 +268,7 @@ def update_annotation_tool(
     # Tool instructions
     instructions = {
         "tool-rectangle": "Click on a tool to activate it. Current tool: Rectangle - Click and drag to draw a rectangle annotation.",
-        "tool-comment": "Click on a tool to activate it. Current tool: Text - Click and drag to add a text annotation.",
+        "tool-comment": "Click on a tool to activate it. Current tool: Comment - Double-click anywhere on the PDF to add a comment.",
         "tool-highlight": "Click on a tool to activate it. Current tool: Highlight - Select text on the PDF to highlight it.",
         "tool-none": "Click on a tool to activate it. Current tool: None - No annotation tool is active.",
     }
