@@ -84,9 +84,56 @@ DeleteButton.propTypes = {
 const RectangleAnnotation = ({
     annotation,
     onDelete,
+    onUpdate,
     selectedAnnotationTool,
     scale = 1.0,
 }) => {
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({x: 0, y: 0});
+    const [initialPosition, setInitialPosition] = useState({x: 0, y: 0});
+
+    const handleMouseDown = (e) => {
+        if (selectedAnnotationTool === 'none') return;
+
+        e.stopPropagation();
+        setIsDragging(true);
+        setDragStart({x: e.clientX, y: e.clientY});
+        setInitialPosition({x: annotation.x, y: annotation.y});
+    };
+
+    const handleMouseMove = useCallback(
+        (e) => {
+            if (!isDragging) {
+                return;
+            }
+
+            const deltaX = (e.clientX - dragStart.x) / scale;
+            const deltaY = (e.clientY - dragStart.y) / scale;
+
+            onUpdate(annotation.id, {
+                x: initialPosition.x + deltaX,
+                y: initialPosition.y + deltaY,
+            });
+        },
+        [isDragging, dragStart, initialPosition, scale, annotation.id, onUpdate]
+    );
+
+    const handleMouseUp = useCallback(() => {
+        setIsDragging(false);
+    }, []);
+
+    useEffect(() => {
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+        }
+        return () => {};
+    }, [isDragging, handleMouseMove, handleMouseUp]);
+
     return (
         <div
             className="annotation-rectangle"
@@ -105,7 +152,14 @@ const RectangleAnnotation = ({
                 border: ANNOTATION_STYLES.rectangle.border,
                 backgroundColor: ANNOTATION_STYLES.rectangle.backgroundColor,
                 zIndex: 5,
+                cursor:
+                    selectedAnnotationTool !== 'none'
+                        ? isDragging
+                            ? 'grabbing'
+                            : 'grab'
+                        : 'default',
             }}
+            onMouseDown={handleMouseDown}
         >
             <DeleteButton
                 annotationId={annotation.id}
@@ -119,6 +173,7 @@ const RectangleAnnotation = ({
 RectangleAnnotation.propTypes = {
     annotation: PropTypes.object.isRequired,
     onDelete: PropTypes.func.isRequired,
+    onUpdate: PropTypes.func.isRequired,
     selectedAnnotationTool: PropTypes.string.isRequired,
     scale: PropTypes.number,
 };
@@ -131,6 +186,54 @@ const CommentAnnotation = ({
     selectedAnnotationTool,
     scale = 1.0,
 }) => {
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({x: 0, y: 0});
+    const [initialPosition, setInitialPosition] = useState({x: 0, y: 0});
+
+    const handleMouseDown = (e) => {
+        if (selectedAnnotationTool === 'none' || e.target.tagName === 'INPUT') {
+            return;
+        }
+
+        e.stopPropagation();
+        setIsDragging(true);
+        setDragStart({x: e.clientX, y: e.clientY});
+        setInitialPosition({x: annotation.x, y: annotation.y});
+    };
+
+    const handleMouseMove = useCallback(
+        (e) => {
+            if (!isDragging) {
+                return;
+            }
+
+            const deltaX = (e.clientX - dragStart.x) / scale;
+            const deltaY = (e.clientY - dragStart.y) / scale;
+
+            onUpdate(annotation.id, {
+                x: initialPosition.x + deltaX,
+                y: initialPosition.y + deltaY,
+            });
+        },
+        [isDragging, dragStart, initialPosition, scale, annotation.id, onUpdate]
+    );
+
+    const handleMouseUp = useCallback(() => {
+        setIsDragging(false);
+    }, []);
+
+    useEffect(() => {
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+        }
+        return () => {};
+    }, [isDragging, handleMouseMove, handleMouseUp]);
+
     return (
         <div
             className="annotation-comment"
@@ -139,7 +242,14 @@ const CommentAnnotation = ({
                 left: annotation.x * scale,
                 top: annotation.y * scale,
                 zIndex: 10,
+                cursor:
+                    selectedAnnotationTool !== 'none'
+                        ? isDragging
+                            ? 'grabbing'
+                            : 'grab'
+                        : 'default',
             }}
+            onMouseDown={handleMouseDown}
         >
             <input
                 type="text"
@@ -297,7 +407,7 @@ const createAnnotationComponent = (annotation, handlers, scale = 1.0) => {
 
     switch (annotation.type) {
         case 'rectangle':
-            return <RectangleAnnotation {...commonProps} />;
+            return <RectangleAnnotation {...commonProps} onUpdate={onUpdate} />;
         case 'comment':
             return <CommentAnnotation {...commonProps} onUpdate={onUpdate} />;
         case 'highlight':
