@@ -16,6 +16,8 @@ const MIN_HIGHLIGHT_DISTANCE = 5;
 const TEXT_SELECTION_DELAY = 50;
 const DELETE_BUTTON_OFFSET_X = 8;
 const DELETE_BUTTON_OFFSET_Y = 8;
+const COMMENT_FONT_SIZE = 14;
+const COMMENT_MIN_WIDTH = 80;
 
 // Annotation rendering configurations
 const ANNOTATION_STYLES = {
@@ -83,16 +85,17 @@ const RectangleAnnotation = ({
     annotation,
     onDelete,
     selectedAnnotationTool,
+    scale = 1.0,
 }) => {
     return (
         <div
             className="annotation-rectangle"
             style={{
                 position: 'absolute',
-                left: Math.min(annotation.x, annotation.x + annotation.width),
-                top: Math.min(annotation.y, annotation.y + annotation.height),
-                width: Math.abs(annotation.width),
-                height: Math.abs(annotation.height),
+                left: Math.min(annotation.x * scale, (annotation.x + annotation.width) * scale),
+                top: Math.min(annotation.y * scale, (annotation.y + annotation.height) * scale),
+                width: Math.abs(annotation.width * scale),
+                height: Math.abs(annotation.height * scale),
                 border: ANNOTATION_STYLES.rectangle.border,
                 backgroundColor: ANNOTATION_STYLES.rectangle.backgroundColor,
                 zIndex: 5,
@@ -111,6 +114,7 @@ RectangleAnnotation.propTypes = {
     annotation: PropTypes.object.isRequired,
     onDelete: PropTypes.func.isRequired,
     selectedAnnotationTool: PropTypes.string.isRequired,
+    scale: PropTypes.number,
 };
 
 // Comment Annotation Component
@@ -119,14 +123,15 @@ const CommentAnnotation = ({
     onDelete,
     onUpdate,
     selectedAnnotationTool,
+    scale = 1.0,
 }) => {
     return (
         <div
             className="annotation-comment"
             style={{
                 position: 'absolute',
-                left: annotation.x,
-                top: annotation.y,
+                left: annotation.x * scale,
+                top: annotation.y * scale,
                 zIndex: 10,
             }}
         >
@@ -145,9 +150,9 @@ const CommentAnnotation = ({
                     backgroundColor: ANNOTATION_STYLES.comment.backgroundColor,
                     border: ANNOTATION_STYLES.comment.border,
                     padding: '4px 8px',
-                    fontSize: '14px',
+                    fontSize: `${COMMENT_FONT_SIZE * scale}px`,
                     borderRadius: '4px',
-                    minWidth: '80px',
+                    minWidth: `${COMMENT_MIN_WIDTH * scale}px`,
                     cursor:
                         selectedAnnotationTool === 'none' ? 'default' : 'text',
                     opacity:
@@ -170,6 +175,7 @@ CommentAnnotation.propTypes = {
     onDelete: PropTypes.func.isRequired,
     onUpdate: PropTypes.func.isRequired,
     selectedAnnotationTool: PropTypes.string.isRequired,
+    scale: PropTypes.number,
 };
 
 // Highlight Annotation Component
@@ -177,6 +183,7 @@ const HighlightAnnotation = ({
     annotation,
     onDelete,
     selectedAnnotationTool,
+    scale = 1.0,
 }) => {
     return (
         <div>
@@ -184,10 +191,10 @@ const HighlightAnnotation = ({
                 className="annotation-highlight"
                 style={{
                     position: 'absolute',
-                    left: annotation.x,
-                    top: annotation.y,
-                    width: annotation.width,
-                    height: annotation.height,
+                    left: annotation.x * scale,
+                    top: annotation.y * scale,
+                    width: annotation.width * scale,
+                    height: annotation.height * scale,
                     backgroundColor:
                         annotation.color ||
                         ANNOTATION_STYLES.highlight.defaultColor,
@@ -208,10 +215,9 @@ const HighlightAnnotation = ({
                 selectedAnnotationTool={selectedAnnotationTool}
                 style={{
                     left:
-                        annotation.x +
-                        annotation.width -
+                        (annotation.x + annotation.width) * scale -
                         DELETE_BUTTON_OFFSET_X,
-                    top: annotation.y - DELETE_BUTTON_OFFSET_Y,
+                    top: annotation.y * scale - DELETE_BUTTON_OFFSET_Y,
                     zIndex: 10,
                     pointerEvents: 'auto',
                 }}
@@ -224,10 +230,11 @@ HighlightAnnotation.propTypes = {
     annotation: PropTypes.object.isRequired,
     onDelete: PropTypes.func.isRequired,
     selectedAnnotationTool: PropTypes.string.isRequired,
+    scale: PropTypes.number,
 };
 
 // Drawing Preview Component
-const DrawingPreview = ({currentAnnotation}) => {
+const DrawingPreview = ({currentAnnotation, scale = 1.0}) => {
     if (!currentAnnotation) {
         return null;
     }
@@ -245,15 +252,15 @@ const DrawingPreview = ({currentAnnotation}) => {
             style={{
                 position: 'absolute',
                 left: Math.min(
-                    currentAnnotation.x,
-                    currentAnnotation.x + currentAnnotation.width
+                    currentAnnotation.x * scale,
+                    (currentAnnotation.x + currentAnnotation.width) * scale
                 ),
                 top: Math.min(
-                    currentAnnotation.y,
-                    currentAnnotation.y + currentAnnotation.height
+                    currentAnnotation.y * scale,
+                    (currentAnnotation.y + currentAnnotation.height) * scale
                 ),
-                width: Math.abs(currentAnnotation.width),
-                height: Math.abs(currentAnnotation.height),
+                width: Math.abs(currentAnnotation.width * scale),
+                height: Math.abs(currentAnnotation.height * scale),
                 border: '2px dashed',
                 backgroundColor: 'rgba(156, 163, 175, 0.1)',
                 pointerEvents: 'none',
@@ -267,10 +274,11 @@ const DrawingPreview = ({currentAnnotation}) => {
 
 DrawingPreview.propTypes = {
     currentAnnotation: PropTypes.object,
+    scale: PropTypes.number,
 };
 
 // Annotation Factory Function
-const createAnnotationComponent = (annotation, handlers) => {
+const createAnnotationComponent = (annotation, handlers, scale = 1.0) => {
     const {onDelete, onUpdate, selectedAnnotationTool} = handlers;
 
     const commonProps = {
@@ -278,6 +286,7 @@ const createAnnotationComponent = (annotation, handlers) => {
         annotation,
         onDelete,
         selectedAnnotationTool,
+        scale,
     };
 
     switch (annotation.type) {
@@ -350,10 +359,10 @@ const _DashPdf = ({
     const getRelativePosition = useCallback((e) => {
         const rect = containerRef.current.getBoundingClientRect();
         return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
+            x: (e.clientX - rect.left) / scale,
+            y: (e.clientY - rect.top) / scale,
         };
-    }, []);
+    }, [scale]);
 
     const callCallback = useCallback((callback, ...args) => {
         if (callback && typeof callback === 'function') {
@@ -421,9 +430,10 @@ const _DashPdf = ({
         const containerRect = containerRef.current.getBoundingClientRect();
         const rangeRect = range.getBoundingClientRect();
 
-        const x = rangeRect.left - containerRect.left;
-        const y = rangeRect.top - containerRect.top;
-        const {width, height} = rangeRect;
+        const x = (rangeRect.left - containerRect.left) / scale;
+        const y = (rangeRect.top - containerRect.top) / scale;
+        const width = rangeRect.width / scale;
+        const height = rangeRect.height / scale;
 
         if (width > MIN_HIGHLIGHT_DISTANCE && height > MIN_HIGHLIGHT_DISTANCE) {
             const highlightAnnotation = createAnnotation({
@@ -656,7 +666,8 @@ const _DashPdf = ({
                             currentPageAnnotations.map((annotation) =>
                                 createAnnotationComponent(
                                     annotation,
-                                    annotationHandlers
+                                    annotationHandlers,
+                                    scale
                                 )
                             )}
 
@@ -667,6 +678,7 @@ const _DashPdf = ({
                             selectedAnnotationTool !== 'none' && (
                                 <DrawingPreview
                                     currentAnnotation={currentAnnotation}
+                                    scale={scale}
                                 />
                             )}
                     </div>
