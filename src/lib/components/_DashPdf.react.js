@@ -201,10 +201,22 @@ const RectangleAnnotation = ({
                 });
             } else if (isResizing) {
                 // Calculate current normalized bounds
-                const currentLeft = Math.min(initialPosition.x, initialPosition.x + initialSize.width);
-                const currentTop = Math.min(initialPosition.y, initialPosition.y + initialSize.height);
-                const currentRight = Math.max(initialPosition.x, initialPosition.x + initialSize.width);
-                const currentBottom = Math.max(initialPosition.y, initialPosition.y + initialSize.height);
+                const currentLeft = Math.min(
+                    initialPosition.x,
+                    initialPosition.x + initialSize.width
+                );
+                const currentTop = Math.min(
+                    initialPosition.y,
+                    initialPosition.y + initialSize.height
+                );
+                const currentRight = Math.max(
+                    initialPosition.x,
+                    initialPosition.x + initialSize.width
+                );
+                const currentBottom = Math.max(
+                    initialPosition.y,
+                    initialPosition.y + initialSize.height
+                );
 
                 let newLeft = currentLeft;
                 let newTop = currentTop;
@@ -250,7 +262,10 @@ const RectangleAnnotation = ({
 
                 // Ensure minimum size
                 const minSize = MIN_RESIZE_SIZE / scale;
-                if (Math.abs(newWidth) >= minSize && Math.abs(newHeight) >= minSize) {
+                if (
+                    Math.abs(newWidth) >= minSize &&
+                    Math.abs(newHeight) >= minSize
+                ) {
                     // Extract text from the new rectangle area
                     const extractedText = extractTextFromRectangle(
                         newLeft,
@@ -303,7 +318,7 @@ const RectangleAnnotation = ({
         return () => {};
     }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
 
-            // Calculate normalized rectangle bounds for proper positioning
+    // Calculate normalized rectangle bounds for proper positioning
     const rectLeft = Math.min(annotation.x, annotation.x + annotation.width);
     const rectTop = Math.min(annotation.y, annotation.y + annotation.height);
     const rectWidth = Math.abs(annotation.width);
@@ -347,7 +362,7 @@ const RectangleAnnotation = ({
                     zIndex: 15, // Higher than resize handles
                 }}
             />
-            
+
             {/* Resize handles - only show when annotation tool is active */}
             {selectedAnnotationTool !== 'none' && (
                 <>
@@ -412,7 +427,7 @@ const RectangleAnnotation = ({
                         }}
                         onMouseDown={(e) => handleResizeStart(e, 'se')}
                     />
-                    
+
                     {/* Edge handles */}
                     <div
                         className="resize-handle resize-handle-n"
@@ -677,8 +692,14 @@ const DrawingPreview = ({currentAnnotation, scale = 1.0}) => {
     const isValidDrag = dragDistance >= MIN_DRAG_DISTANCE;
 
     // Calculate normalized bounds for proper positioning
-    const previewLeft = Math.min(currentAnnotation.x, currentAnnotation.x + currentAnnotation.width);
-    const previewTop = Math.min(currentAnnotation.y, currentAnnotation.y + currentAnnotation.height);
+    const previewLeft = Math.min(
+        currentAnnotation.x,
+        currentAnnotation.x + currentAnnotation.width
+    );
+    const previewTop = Math.min(
+        currentAnnotation.y,
+        currentAnnotation.y + currentAnnotation.height
+    );
     const previewWidth = Math.abs(currentAnnotation.width);
     const previewHeight = Math.abs(currentAnnotation.height);
 
@@ -928,14 +949,22 @@ const _DashPdf = ({
         (annotationId, updates) => {
             const updatesWithVersionAndTimestamp = {
                 ...updates,
-                version: (annotations.find(ann => ann.id === annotationId)?.version || 1) + 1,
+                version:
+                    (annotations.find((ann) => ann.id === annotationId)
+                        ?.version || 1) + 1,
                 updated_at: new Date().toISOString(),
             };
             const newAnnotations = annotations.map((ann) =>
-                ann.id === annotationId ? {...ann, ...updatesWithVersionAndTimestamp} : ann
+                ann.id === annotationId
+                    ? {...ann, ...updatesWithVersionAndTimestamp}
+                    : ann
             );
             updateAnnotations(newAnnotations);
-            callCallback(onAnnotationUpdate, annotationId, updatesWithVersionAndTimestamp);
+            callCallback(
+                onAnnotationUpdate,
+                annotationId,
+                updatesWithVersionAndTimestamp
+            );
         },
         [annotations, updateAnnotations, onAnnotationUpdate, callCallback]
     );
