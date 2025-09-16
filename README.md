@@ -46,8 +46,8 @@ app.layout = html.Div(
         dash_pdf_plus.DashPDF(
             id="pdf-viewer",
             data=pdf_bytes,
-            enableAnnotations=True,
-            selectedAnnotationTool="none",
+            enable_annotations=True,
+            selected_annotation_tool="none",
             annotations=[],
         ),
     ]
@@ -83,7 +83,7 @@ uv pip install -r requirements.txt
 uv run app.py
 ```
 
-Open: http://localhost:8050
+Open: http://localhost:8060
 
 ## Development Setup
 
@@ -119,7 +119,7 @@ npm run build
 uv build
 
 # Test the artifact
-uv pip install dash dist/dash_pdf_plus-0.0.3.tar.gz
+uv pip install dash dist/dash_pdf_plus-0.0.4.tar.gz
 uv run demo/app.py
 
 # Upload to PyPI
