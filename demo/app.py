@@ -205,8 +205,8 @@ app.layout = html.Div(
                     dash_pdf_plus.DashPDF(
                         id="pdf-viewer",
                         data=load_pdf(DEFAULT_URL),
-                        enableAnnotations=True,
-                        selectedAnnotationTool="none",
+                        enable_annotations=True,
+                        selected_annotation_tool="none",
                         annotations=[],
                     ),
                     className="p-2",
@@ -241,7 +241,7 @@ def update_pdf(n_clicks, n_submit, url):
 
 @app.callback(
     [
-        Output("pdf-viewer", "selectedAnnotationTool"),
+        Output("pdf-viewer", "selected_annotation_tool"),
         Output("tool-instructions", "children"),
         Output("tool-comment", "outline"),
         Output("tool-rectangle", "outline"),
@@ -317,11 +317,11 @@ def handle_annotation_changes(annotations):
 
 # increment or decrement page number
 @app.callback(
-    Output("pdf-viewer", "pageNumber"),
+    Output("pdf-viewer", "page_number"),
     Input("prev-page-button", "n_clicks"),
     Input("next-page-button", "n_clicks"),
-    State("pdf-viewer", "pageNumber"),
-    State("pdf-viewer", "numPages"),
+    State("pdf-viewer", "page_number"),
+    State("pdf-viewer", "num_pages"),
     prevent_initial_call=True,
 )
 def change_page(prev_clicks, next_clicks, current_page, num_pages):

@@ -18,12 +18,12 @@ app.layout = html.Div(
         dash_pdf_plus.DashPDF(
             id="pdf-viewer",
             data=pdf_bytes,
-            enableAnnotations=True,
-            selectedAnnotationTool="none",
+            enable_annotations=True,
+            selected_annotation_tool="none",
             annotations=[],
         ),
     ]
 )
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(port=8070, debug=True)

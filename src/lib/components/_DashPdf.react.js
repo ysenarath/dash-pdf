@@ -758,20 +758,20 @@ const createAnnotationComponent = (annotation, handlers, scale = 1.0) => {
 const _DashPdf = ({
     id,
     data,
-    enableAnnotations = false,
+    enable_annotations = false,
     annotations = [],
-    selectedAnnotationTool = 'none',
+    selected_annotation_tool = 'none',
     scale = 1.0,
     onAnnotationAdd = null,
     onAnnotationDelete = null,
     onAnnotationUpdate = null,
-    pageNumber = 1,
-    enablePan = true,
-    enableZoom = true,
-    minScale = 0.5,
-    maxScale = 3.0,
+    page_number = 1,
+    enable_pan = true,
+    enable_zoom = true,
+    min_scale = 0.5,
+    max_scale = 3.0,
     // eslint-disable-next-line no-magic-numbers
-    zoomStep = 0.1,
+    zoom_step = 0.1,
     setProps,
 }) => {
     // const  = props;
@@ -789,7 +789,7 @@ const _DashPdf = ({
 
     // Check if annotation tools are active (not 'none')
     const isAnnotationToolActive =
-        enableAnnotations && selectedAnnotationTool !== 'none';
+        enable_annotations && selected_annotation_tool !== 'none';
 
     // Utility functions
     const updateProps = useCallback(
@@ -833,10 +833,10 @@ const _DashPdf = ({
             version: 1,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            page: pageNumber,
+            page: page_number,
             ...baseProps,
         }),
-        [pageNumber, generateUUID]
+        [page_number, generateUUID]
     );
 
     const getRelativePosition = useCallback(
@@ -853,7 +853,7 @@ const _DashPdf = ({
     // Pan handlers
     const handlePanStart = useCallback(
         (e) => {
-            if (!enablePan || isAnnotationToolActive) {
+            if (!enable_pan || isAnnotationToolActive) {
                 return;
             }
 
@@ -861,12 +861,12 @@ const _DashPdf = ({
             setLastPanPoint({x: e.clientX, y: e.clientY});
             e.preventDefault();
         },
-        [enablePan, isAnnotationToolActive]
+        [enable_pan, isAnnotationToolActive]
     );
 
     const handlePanMove = useCallback(
         (e) => {
-            if (!isPanning || !enablePan) {
+            if (!isPanning || !enable_pan) {
                 return;
             }
 
@@ -881,7 +881,7 @@ const _DashPdf = ({
             setLastPanPoint({x: e.clientX, y: e.clientY});
             e.preventDefault();
         },
-        [isPanning, enablePan, lastPanPoint]
+        [isPanning, enable_pan, lastPanPoint]
     );
 
     const handlePanEnd = useCallback(() => {
@@ -891,23 +891,23 @@ const _DashPdf = ({
     // Zoom handler
     const handleWheel = useCallback(
         (e) => {
-            if (!enableZoom) {
+            if (!enable_zoom) {
                 return;
             }
 
             e.preventDefault();
 
-            const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+            const delta = e.deltaY > 0 ? -zoom_step : zoom_step;
             const newScale = Math.max(
-                minScale,
-                Math.min(maxScale, scale + delta)
+                min_scale,
+                Math.min(max_scale, scale + delta)
             );
 
             if (newScale !== scale) {
                 updateProps({scale: newScale});
             }
         },
-        [enableZoom, scale, zoomStep, minScale, maxScale, updateProps]
+        [enable_zoom, scale, zoom_step, min_scale, max_scale, updateProps]
     );
 
     const callCallback = useCallback((callback, ...args) => {
@@ -919,7 +919,7 @@ const _DashPdf = ({
     // Document load handler
     const onDocumentLoadSuccess = useCallback(
         ({numPages}) => {
-            updateProps({numPages, pageNumber: 1});
+            updateProps({num_pages: numPages, page_number: 1});
         },
         [updateProps]
     );
@@ -971,7 +971,7 @@ const _DashPdf = ({
 
     // Text selection for highlighting
     const handleTextSelection = useCallback(() => {
-        if (!isAnnotationToolActive || selectedAnnotationTool !== 'highlight') {
+        if (!isAnnotationToolActive || selected_annotation_tool !== 'highlight') {
             return;
         }
 
@@ -1011,14 +1011,14 @@ const _DashPdf = ({
         }
     }, [
         isAnnotationToolActive,
-        selectedAnnotationTool,
+        selected_annotation_tool,
         createAnnotation,
         addAnnotation,
     ]);
 
     // Selection change listeners
     useEffect(() => {
-        if (!isAnnotationToolActive || selectedAnnotationTool !== 'highlight') {
+        if (!isAnnotationToolActive || selected_annotation_tool !== 'highlight') {
             return () => {};
         }
 
@@ -1029,7 +1029,7 @@ const _DashPdf = ({
 
         const handleMouseUp = () => {
             setTimeout(() => {
-                if (selectedAnnotationTool === 'highlight') {
+                if (selected_annotation_tool === 'highlight') {
                     handleTextSelection();
                 }
                 setIsTextSelecting(false);
@@ -1046,14 +1046,14 @@ const _DashPdf = ({
             );
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isAnnotationToolActive, selectedAnnotationTool, handleTextSelection]);
+    }, [isAnnotationToolActive, selected_annotation_tool, handleTextSelection]);
 
     // Double-click handler for comment tool
     const handleDoubleClick = useCallback(
         (e) => {
             if (
                 !isAnnotationToolActive ||
-                selectedAnnotationTool !== 'comment' ||
+                selected_annotation_tool !== 'comment' ||
                 e.target.closest('.annotation-comment, .annotation-rectangle')
             ) {
                 return;
@@ -1072,7 +1072,7 @@ const _DashPdf = ({
         },
         [
             isAnnotationToolActive,
-            selectedAnnotationTool,
+            selected_annotation_tool,
             getRelativePosition,
             createAnnotation,
             addAnnotation,
@@ -1137,9 +1137,9 @@ const _DashPdf = ({
         (e) => {
             if (
                 !isAnnotationToolActive ||
-                selectedAnnotationTool === 'highlight' ||
-                selectedAnnotationTool === 'none' ||
-                selectedAnnotationTool === 'comment' ||
+                selected_annotation_tool === 'highlight' ||
+                selected_annotation_tool === 'none' ||
+                selected_annotation_tool === 'comment' ||
                 e.target.closest('.annotation-comment, .annotation-rectangle')
             ) {
                 return;
@@ -1151,7 +1151,7 @@ const _DashPdf = ({
             setIsDrawing(true);
 
             const newAnnotation = createAnnotation({
-                type: selectedAnnotationTool,
+                type: selected_annotation_tool,
                 x,
                 y,
                 width: 0,
@@ -1162,7 +1162,7 @@ const _DashPdf = ({
         },
         [
             isAnnotationToolActive,
-            selectedAnnotationTool,
+            selected_annotation_tool,
             getRelativePosition,
             createAnnotation,
         ]
@@ -1173,9 +1173,9 @@ const _DashPdf = ({
             if (
                 !isDrawing ||
                 !currentAnnotation ||
-                selectedAnnotationTool === 'highlight' ||
-                selectedAnnotationTool === 'none' ||
-                selectedAnnotationTool === 'comment' ||
+                selected_annotation_tool === 'highlight' ||
+                selected_annotation_tool === 'none' ||
+                selected_annotation_tool === 'comment' ||
                 isTextSelecting
             ) {
                 return;
@@ -1191,7 +1191,7 @@ const _DashPdf = ({
         [
             isDrawing,
             currentAnnotation,
-            selectedAnnotationTool,
+            selected_annotation_tool,
             isTextSelecting,
             getRelativePosition,
         ]
@@ -1199,9 +1199,9 @@ const _DashPdf = ({
 
     const handleMouseUp = useCallback(() => {
         if (
-            selectedAnnotationTool === 'highlight' ||
-            selectedAnnotationTool === 'none' ||
-            selectedAnnotationTool === 'comment' ||
+            selected_annotation_tool === 'highlight' ||
+            selected_annotation_tool === 'none' ||
+            selected_annotation_tool === 'comment' ||
             isTextSelecting
         ) {
             return;
@@ -1216,7 +1216,7 @@ const _DashPdf = ({
             if (draggedDistance >= MIN_DRAG_DISTANCE) {
                 // Extract text from the rectangle area for rectangle annotations
                 let annotationWithText = currentAnnotation;
-                if (selectedAnnotationTool === 'rectangle') {
+                if (selected_annotation_tool === 'rectangle') {
                     const extractedText = extractTextFromRectangle(
                         currentAnnotation.x,
                         currentAnnotation.y,
@@ -1238,7 +1238,7 @@ const _DashPdf = ({
     }, [
         isDrawing,
         currentAnnotation,
-        selectedAnnotationTool,
+        selected_annotation_tool,
         isTextSelecting,
         addAnnotation,
         extractTextFromRectangle,
@@ -1247,7 +1247,7 @@ const _DashPdf = ({
     // Get appropriate mouse handlers based on selected tool and pan state
     const getMouseHandlers = useCallback(() => {
         // Pan handlers take priority when no annotation tool is active
-        if (!isAnnotationToolActive && enablePan) {
+        if (!isAnnotationToolActive && enable_pan) {
             return {
                 onMouseDown: handlePanStart,
                 onMouseMove: handlePanMove,
@@ -1257,8 +1257,8 @@ const _DashPdf = ({
         }
 
         // Annotation handlers
-        if (isAnnotationToolActive && selectedAnnotationTool !== 'none') {
-            switch (selectedAnnotationTool) {
+        if (isAnnotationToolActive && selected_annotation_tool !== 'none') {
+            switch (selected_annotation_tool) {
                 case 'highlight':
                     return {};
                 case 'comment':
@@ -1277,8 +1277,8 @@ const _DashPdf = ({
         return {};
     }, [
         isAnnotationToolActive,
-        enablePan,
-        selectedAnnotationTool,
+        enable_pan,
+        selected_annotation_tool,
         handlePanStart,
         handlePanMove,
         handlePanEnd,
@@ -1290,7 +1290,7 @@ const _DashPdf = ({
 
     // Filter annotations for current page
     const currentPageAnnotations = annotations.filter(
-        (ann) => ann.page === pageNumber
+        (ann) => ann.page === page_number
     );
     const mouseHandlers = getMouseHandlers();
 
@@ -1298,7 +1298,7 @@ const _DashPdf = ({
     const annotationHandlers = {
         onDelete: deleteAnnotation,
         onUpdate: updateAnnotation,
-        selectedAnnotationTool,
+        selectedAnnotationTool: selected_annotation_tool,
     };
 
     return (
@@ -1308,11 +1308,11 @@ const _DashPdf = ({
                     <div
                         ref={containerRef}
                         className={`pdf-container ${
-                            selectedAnnotationTool === 'highlight'
+                            selected_annotation_tool === 'highlight'
                                 ? 'highlight-mode'
                                 : ''
                         } ${
-                            enablePan && !isAnnotationToolActive
+                            enable_pan && !isAnnotationToolActive
                                 ? 'pan-enabled'
                                 : ''
                         }`}
@@ -1320,14 +1320,14 @@ const _DashPdf = ({
                             position: 'relative',
                             display: 'inline-block',
                             userSelect:
-                                selectedAnnotationTool === 'highlight'
+                                selected_annotation_tool === 'highlight'
                                     ? 'text'
                                     : 'none',
                             cursor: isPanning
                                 ? 'grabbing'
-                                : enablePan && !isAnnotationToolActive
+                                : enable_pan && !isAnnotationToolActive
                                 ? 'grab'
-                                : selectedAnnotationTool === 'none'
+                                : selected_annotation_tool === 'none'
                                 ? 'default'
                                 : 'auto',
                             transform: `translate(${panOffset.x}px, ${panOffset.y}px)`,
@@ -1346,7 +1346,7 @@ const _DashPdf = ({
                             }
                         >
                             <Page
-                                pageNumber={pageNumber}
+                                pageNumber={page_number}
                                 scale={scale}
                                 renderTextLayer={true}
                                 renderAnnotationLayer={false}
@@ -1354,7 +1354,7 @@ const _DashPdf = ({
                         </Document>
 
                         {/* Render existing annotations */}
-                        {enableAnnotations &&
+                        {enable_annotations &&
                             currentPageAnnotations.map((annotation) =>
                                 createAnnotationComponent(
                                     annotation,
@@ -1366,9 +1366,9 @@ const _DashPdf = ({
                         {/* Current drawing annotation preview */}
                         {isAnnotationToolActive &&
                             currentAnnotation &&
-                            selectedAnnotationTool !== 'highlight' &&
-                            selectedAnnotationTool !== 'none' &&
-                            selectedAnnotationTool !== 'comment' && (
+                            selected_annotation_tool !== 'highlight' &&
+                            selected_annotation_tool !== 'none' &&
+                            selected_annotation_tool !== 'comment' && (
                                 <DrawingPreview
                                     currentAnnotation={currentAnnotation}
                                     scale={scale}
@@ -1399,19 +1399,19 @@ _DashPdf.propTypes = {
     scale: PropTypes.number,
 
     /** Current page number to display (1-based indexing) */
-    pageNumber: PropTypes.number,
+    page_number: PropTypes.number,
 
     /** Total number of pages in the PDF document */
-    numPages: PropTypes.number,
+    num_pages: PropTypes.number,
 
     /** Whether annotation functionality is enabled */
-    enableAnnotations: PropTypes.bool,
+    enable_annotations: PropTypes.bool,
 
     /** Array of annotation objects containing position, type, and content data */
     annotations: PropTypes.arrayOf(PropTypes.object),
 
     /** Currently selected annotation tool type */
-    selectedAnnotationTool: PropTypes.oneOf([
+    selected_annotation_tool: PropTypes.oneOf([
         'none',
         'comment',
         'rectangle',
@@ -1428,19 +1428,19 @@ _DashPdf.propTypes = {
     onAnnotationUpdate: PropTypes.func,
 
     /** Whether pan functionality is enabled (default: true) */
-    enablePan: PropTypes.bool,
+    enable_pan: PropTypes.bool,
 
     /** Whether zoom functionality is enabled (default: true) */
-    enableZoom: PropTypes.bool,
+    enable_zoom: PropTypes.bool,
 
     /** Minimum scale factor for zooming (default: 0.5) */
-    minScale: PropTypes.number,
+    min_scale: PropTypes.number,
 
     /** Maximum scale factor for zooming (default: 3.0) */
-    maxScale: PropTypes.number,
+    max_scale: PropTypes.number,
 
     /** Step size for zoom increments (default: 0.1) */
-    zoomStep: PropTypes.number,
+    zoom_step: PropTypes.number,
 };
 
 export default _DashPdf;
