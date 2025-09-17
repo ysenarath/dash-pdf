@@ -359,6 +359,7 @@ const RectangleAnnotation = ({
                 style={{
                     top: '-8px',
                     right: '-8px',
+                    // eslint-disable-next-line no-inline-comments
                     zIndex: 15, // Higher than resize handles
                 }}
             />
@@ -971,7 +972,10 @@ const _DashPdf = ({
 
     // Text selection for highlighting
     const handleTextSelection = useCallback(() => {
-        if (!isAnnotationToolActive || selected_annotation_tool !== 'highlight') {
+        if (
+            !isAnnotationToolActive ||
+            selected_annotation_tool !== 'highlight'
+        ) {
             return;
         }
 
@@ -1018,7 +1022,10 @@ const _DashPdf = ({
 
     // Selection change listeners
     useEffect(() => {
-        if (!isAnnotationToolActive || selected_annotation_tool !== 'highlight') {
+        if (
+            !isAnnotationToolActive ||
+            selected_annotation_tool !== 'highlight'
+        ) {
             return () => {};
         }
 
