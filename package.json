@@ -12,13 +12,16 @@
     "homepage": "https://github.com/ysenarath/dash-pdf",
     "main": "build/index.js",
     "scripts": {
+        "clean": "find dash_pdf_plus -type f ! -name '__init__.py' -delete",
         "start": "webpack serve --config ./webpack.serve.config.js --open",
         "validate-init": "python _validate_init.py",
         "prepublishOnly": "npm run validate-init",
         "build:js": "webpack --mode production",
+        "build:js:dev": "webpack --mode development",
         "build:backends": "dash-generate-components ./src/lib/components dash_pdf_plus -p package-info.json --ignore \\.test\\.",
         "build:backends-activated": "(. venv/bin/activate || venv\\scripts\\activate && npm run build:backends)",
-        "build": "npm run build:js && npm run build:backends",
+        "build": "npm run clean && npm run build:js && npm run build:backends",
+        "build:dev": "npm run clean && npm run build:js:dev && npm run build:backends",
         "build:activated": "npm run build:js && npm run build:backends-activated"
     },
     "author": "Yasas Senarath",
@@ -49,6 +52,7 @@
         "react-dom": "^18.2.0",
         "style-loader": "^3.3.3",
         "styled-jsx": "^5.1.6",
+        "terser-webpack-plugin": "^5.3.14",
         "webpack": "^5.84.1",
         "webpack-cli": "^5.1.1",
         "webpack-dev-server": "^4.15.0"

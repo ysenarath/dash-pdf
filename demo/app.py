@@ -149,6 +149,21 @@ app.layout = html.Div(
                         ]
                     ),
                 ),
+                # Selected Annotation
+                dbc.Card(
+                    dbc.CardBody(
+                        [
+                            html.H5("Selected Annotation", className="card-title mb-3"),
+                            html.Pre(
+                                id="selected-annotation",
+                                children="No annotation selected.",
+                                className="small bg-light p-2",
+                                style={"height": "150px", "overflowY": "auto"},
+                            ),
+                        ]
+                    ),
+                    className="my-3",
+                ),
                 # Footer
                 html.Footer(
                     html.P(
@@ -357,5 +372,17 @@ def change_scale(zoom_in_clicks, zoom_out_clicks, current_scale):
     return current_scale
 
 
+# selected_annotation
+@app.callback(
+    Output("selected-annotation", "children"),
+    Input("pdf-viewer", "selected_annotation"),
+    prevent_initial_call=True,
+)
+def display_selected_annotation(annotation):
+    if annotation:
+        return json.dumps(annotation, indent=2)
+    return "No annotation selected."
+
+
 if __name__ == "__main__":
-    app.run(port=8060, debug=True)
+    app.server.run(port=8060, debug=True)

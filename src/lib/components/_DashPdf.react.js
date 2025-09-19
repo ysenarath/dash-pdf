@@ -25,14 +25,26 @@ const ANNOTATION_STYLES = {
     rectangle: {
         border: '2px solid #dc2626',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        selected: {
+            border: '2px solid #991b1b',
+            backgroundColor: 'rgba(185, 28, 28, 0.2)',
+        },
     },
     comment: {
         backgroundColor: '#dbeafe',
         border: '1px solid #3b82f6',
+        selected: {
+            backgroundColor: '#bfdbfe',
+            border: '2px solid #1d4ed8',
+        },
     },
     highlight: {
         defaultColor: '#ffff00',
         borderRadius: '2px',
+        selected: {
+            defaultColor: '#fbbf24',
+            border: '1px solid #d97706',
+        },
     },
 };
 
@@ -86,7 +98,9 @@ const RectangleAnnotation = ({
     annotation,
     onDelete,
     onUpdate,
+    onSelect,
     selectedAnnotationTool,
+    isSelected = false,
     scale = 1.0,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
@@ -151,6 +165,9 @@ const RectangleAnnotation = ({
 
     const handleMouseDown = (e) => {
         if (selectedAnnotationTool === 'none') {
+            if (onSelect) {
+                onSelect(annotation.id);
+            }
             return;
         }
 
@@ -324,6 +341,11 @@ const RectangleAnnotation = ({
     const rectWidth = Math.abs(annotation.width);
     const rectHeight = Math.abs(annotation.height);
 
+    // Get styles based on selection state
+    const rectangleStyle = isSelected
+        ? ANNOTATION_STYLES.rectangle.selected
+        : ANNOTATION_STYLES.rectangle;
+
     return (
         <div
             className="annotation-rectangle"
@@ -333,8 +355,8 @@ const RectangleAnnotation = ({
                 top: rectTop * scale,
                 width: rectWidth * scale,
                 height: rectHeight * scale,
-                border: ANNOTATION_STYLES.rectangle.border,
-                backgroundColor: ANNOTATION_STYLES.rectangle.backgroundColor,
+                border: rectangleStyle.border,
+                backgroundColor: rectangleStyle.backgroundColor,
                 zIndex: 5,
                 cursor:
                     selectedAnnotationTool !== 'none'
@@ -343,7 +365,7 @@ const RectangleAnnotation = ({
                             : isResizing
                             ? 'nwse-resize'
                             : 'grab'
-                        : 'default',
+                        : 'pointer',
             }}
             onMouseDown={handleMouseDown}
             title={
@@ -504,7 +526,9 @@ RectangleAnnotation.propTypes = {
     annotation: PropTypes.object.isRequired,
     onDelete: PropTypes.func.isRequired,
     onUpdate: PropTypes.func.isRequired,
+    onSelect: PropTypes.func,
     selectedAnnotationTool: PropTypes.string.isRequired,
+    isSelected: PropTypes.bool,
     scale: PropTypes.number,
 };
 
@@ -513,7 +537,9 @@ const CommentAnnotation = ({
     annotation,
     onDelete,
     onUpdate,
+    onSelect,
     selectedAnnotationTool,
+    isSelected = false,
     scale = 1.0,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
@@ -521,7 +547,14 @@ const CommentAnnotation = ({
     const [initialPosition, setInitialPosition] = useState({x: 0, y: 0});
 
     const handleMouseDown = (e) => {
-        if (selectedAnnotationTool === 'none' || e.target.tagName === 'INPUT') {
+        if (e.target.tagName === 'INPUT') {
+            return;
+        }
+
+        if (selectedAnnotationTool === 'none') {
+            if (onSelect) {
+                onSelect(annotation.id);
+            }
             return;
         }
 
@@ -564,6 +597,11 @@ const CommentAnnotation = ({
         return () => {};
     }, [isDragging, handleMouseMove, handleMouseUp]);
 
+    // Get styles based on selection state
+    const commentStyle = isSelected
+        ? ANNOTATION_STYLES.comment.selected
+        : ANNOTATION_STYLES.comment;
+
     return (
         <div
             className="annotation-comment"
@@ -577,7 +615,7 @@ const CommentAnnotation = ({
                         ? isDragging
                             ? 'grabbing'
                             : 'grab'
-                        : 'default',
+                        : 'pointer',
             }}
             onMouseDown={handleMouseDown}
         >
@@ -593,8 +631,8 @@ const CommentAnnotation = ({
                 onClick={(e) => e.stopPropagation()}
                 disabled={selectedAnnotationTool === 'none'}
                 style={{
-                    backgroundColor: ANNOTATION_STYLES.comment.backgroundColor,
-                    border: ANNOTATION_STYLES.comment.border,
+                    backgroundColor: commentStyle.backgroundColor,
+                    border: commentStyle.border,
                     padding: '4px 8px',
                     fontSize: `${COMMENT_FONT_SIZE * scale}px`,
                     borderRadius: '4px',
@@ -620,7 +658,9 @@ CommentAnnotation.propTypes = {
     annotation: PropTypes.object.isRequired,
     onDelete: PropTypes.func.isRequired,
     onUpdate: PropTypes.func.isRequired,
+    onSelect: PropTypes.func,
     selectedAnnotationTool: PropTypes.string.isRequired,
+    isSelected: PropTypes.bool,
     scale: PropTypes.number,
 };
 
@@ -628,9 +668,23 @@ CommentAnnotation.propTypes = {
 const HighlightAnnotation = ({
     annotation,
     onDelete,
+    onSelect,
     selectedAnnotationTool,
+    isSelected = false,
     scale = 1.0,
 }) => {
+    // Get styles based on selection state
+    const highlightStyle = isSelected
+        ? ANNOTATION_STYLES.highlight.selected
+        : ANNOTATION_STYLES.highlight;
+
+    const handleClick = (e) => {
+        if (selectedAnnotationTool === 'none' && onSelect) {
+            e.stopPropagation();
+            onSelect(annotation.id);
+        }
+    };
+
     return (
         <div>
             <div
@@ -642,13 +696,17 @@ const HighlightAnnotation = ({
                     width: annotation.width * scale,
                     height: annotation.height * scale,
                     backgroundColor:
-                        annotation.color ||
-                        ANNOTATION_STYLES.highlight.defaultColor,
+                        annotation.color || highlightStyle.defaultColor,
                     opacity: annotation.opacity || DEFAULT_OPACITY,
-                    pointerEvents: 'none',
+                    pointerEvents:
+                        selectedAnnotationTool === 'none' ? 'auto' : 'none',
                     borderRadius: ANNOTATION_STYLES.highlight.borderRadius,
+                    border: isSelected ? highlightStyle.border : 'none',
                     zIndex: 1,
+                    cursor:
+                        selectedAnnotationTool === 'none' ? 'pointer' : 'auto',
                 }}
+                onClick={handleClick}
                 title={
                     annotation.selected_text
                         ? `"${annotation.selected_text}"`
@@ -675,7 +733,9 @@ const HighlightAnnotation = ({
 HighlightAnnotation.propTypes = {
     annotation: PropTypes.object.isRequired,
     onDelete: PropTypes.func.isRequired,
+    onSelect: PropTypes.func,
     selectedAnnotationTool: PropTypes.string.isRequired,
+    isSelected: PropTypes.bool,
     scale: PropTypes.number,
 };
 
@@ -731,13 +791,21 @@ DrawingPreview.propTypes = {
 
 // Annotation Factory Function
 const createAnnotationComponent = (annotation, handlers, scale = 1.0) => {
-    const {onDelete, onUpdate, selectedAnnotationTool} = handlers;
+    const {
+        onDelete,
+        onUpdate,
+        onSelect,
+        selectedAnnotationTool,
+        selectedAnnotation,
+    } = handlers;
 
     const commonProps = {
         key: annotation.id,
         annotation,
         onDelete,
+        onSelect,
         selectedAnnotationTool,
+        isSelected: annotation.id === selectedAnnotation,
         scale,
     };
 
@@ -762,6 +830,7 @@ const _DashPdf = ({
     enable_annotations = false,
     annotations = [],
     selected_annotation_tool = 'none',
+    selected_annotation = null,
     scale = 1.0,
     onAnnotationAdd = null,
     onAnnotationDelete = null,
@@ -968,6 +1037,16 @@ const _DashPdf = ({
             );
         },
         [annotations, updateAnnotations, onAnnotationUpdate, callCallback]
+    );
+
+    // Annotation selection handler
+    const handleAnnotationSelect = useCallback(
+        (annotationId) => {
+            const newSelectedAnnotation =
+                selected_annotation === annotationId ? null : annotationId;
+            updateProps({selected_annotation: newSelectedAnnotation});
+        },
+        [selected_annotation, updateProps]
     );
 
     // Text selection for highlighting
@@ -1305,7 +1384,9 @@ const _DashPdf = ({
     const annotationHandlers = {
         onDelete: deleteAnnotation,
         onUpdate: updateAnnotation,
+        onSelect: handleAnnotationSelect,
         selectedAnnotationTool: selected_annotation_tool,
+        selectedAnnotation: selected_annotation,
     };
 
     return (
@@ -1424,6 +1505,9 @@ _DashPdf.propTypes = {
         'rectangle',
         'highlight',
     ]),
+
+    /** ID of the currently selected annotation */
+    selected_annotation: PropTypes.string,
 
     /** Callback fired when a new annotation is added */
     onAnnotationAdd: PropTypes.func,

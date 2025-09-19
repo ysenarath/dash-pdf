@@ -3,7 +3,7 @@ const webpack = require('webpack');
 const WebpackDashDynamicImport = require('@plotly/webpack-dash-dynamic-import');
 const packagejson = require('./package.json');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-
+const TerserPlugin = require('terser-webpack-plugin');
 const dashLibraryName = packagejson.name.replace(/-/g, '_');
 
 module.exports = (env, argv) => {
