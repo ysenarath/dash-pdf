@@ -119,7 +119,7 @@ npm run build
 uv build
 
 # Test the artifact
-uv pip install dash dist/dash_pdf_plus-0.0.4.tar.gz
+uv pip install dash dist/dash_pdf_plus-0.0.5.tar.gz
 uv run demo/app.py
 
 # Upload to PyPI

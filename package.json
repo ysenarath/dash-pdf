@@ -1,6 +1,6 @@
 {
     "name": "dash_pdf_plus",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "A Dash component library for rendering PDF documents with enhanced features.",
     "repository": {
         "type": "git",
